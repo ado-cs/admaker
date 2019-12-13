@@ -58,14 +58,39 @@ public class Helper {
     }
 
     private static Object getObject(Map map, String... path) {
-        if (CollectionUtils.isEmpty(map) || path.length == 0) return null;
+        return get(map, path.length, path);
+    }
+
+    public static Map getMap(Map map, String... path) {
+        Object obj = get(map, path.length - 1, path);
+        return obj instanceof Map ? (Map) obj : null;
+    }
+
+    private static Object get(Map map, int depth, String... path) {
+        if (CollectionUtils.isEmpty(map) || path.length == 0 || depth < 1 || depth > path.length) return null;
         Object obj = null;
-        for (int i = 0; i < path.length; i++) {
+        for (int i = 0; i < depth; i++) {
             obj = map.get(path[i]);
+            if (obj instanceof List && i < path.length - 1) obj = ((List) obj).get(0);
             if (obj instanceof Map) map = (Map) obj;
             else if (obj == null || i < path.length - 1) return null;
         }
         return obj;
+
+    }
+
+    public static String repeat(String limit) {
+        try {
+            int len = Integer.parseInt(limit);
+            StringBuilder s = new StringBuilder();
+            for (int i = 0; i < len; i++) {
+                s.append('1');
+            }
+            return s.toString();
+        }
+        catch (NumberFormatException e) {
+            return "1234567890";
+        }
     }
 
     public static String replace(String str, String oldStr, String newStr) {

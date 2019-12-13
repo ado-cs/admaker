@@ -1,5 +1,6 @@
 package we.lcx.admaker.utils;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -10,28 +11,34 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
  * Created by LinChenxiao on 2019/12/12 17:21
  **/
+@Slf4j
 public class HttpExecutor {
     private static final ExecutorService executor = Executors.newFixedThreadPool(4);
 
-    public static boolean execute(List<Task> tasks) {
-        if (CollectionUtils.isEmpty(tasks)) return false;
+    public static List<Result> execute(List<Task> tasks) {
+        if (CollectionUtils.isEmpty(tasks)) return new ArrayList<>();
         List<CompletableFuture<Result>> futureList = new ArrayList<>();
+        ConcurrentLinkedQueue<Result> results = new ConcurrentLinkedQueue<>();
         for (Task task : tasks) {
-            futureList.add(CompletableFuture.supplyAsync(() -> doRequest(task), executor));
+            futureList.add(CompletableFuture.supplyAsync(() -> doRequest(task), executor).whenComplete((v, e) -> {
+                if (e != null) log.error("failed to execute, e={}", e);
+                else if (v != null) results.add(v);
+            }));
         }
         try {
             CompletableFuture.allOf(futureList.toArray(new CompletableFuture[0])).get();
         }
         catch (Exception e) {
-            return false;
+            log.error("failed to get future, e={}", e);
         }
-        return true;
+        return new ArrayList<>(results);
     }
 
     @SuppressWarnings("unchecked")

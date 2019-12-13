@@ -13,6 +13,7 @@ public class AdPackage {
     private String id;
     private String name;
     private String refId;
-    private ShowType type;
+    private ShowType mainType;
+    private String showType;
     private List<AdUnit> units;
 }

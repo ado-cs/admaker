@@ -17,3 +17,7 @@ td a:hover {
 td {
     cursor: pointer;
 }
+
+.hidden {
+    display: none;
+}

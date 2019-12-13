@@ -4,10 +4,12 @@ import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import we.lcx.admaker.common.AdPackage;
 import we.lcx.admaker.common.AdUnit;
 import we.lcx.admaker.common.consts.Cookies;
 import we.lcx.admaker.common.consts.Params;
+import we.lcx.admaker.common.consts.Settings;
 import we.lcx.admaker.common.consts.URLs;
 import we.lcx.admaker.common.enums.ShowType;
 import we.lcx.admaker.utils.DataKeeper;
@@ -55,7 +57,8 @@ public class BaseInfo {
                     if (!(var9 instanceof Map)) continue;
                     Map var10 = (Map) var9;
                     var7.setRefId(Helper.getString(var10, "uid"));
-                    var7.setType(ShowType.of(Helper.getString(var10, "mainShowType", "code")));
+                    var7.setMainType(ShowType.of(Helper.getString(var10, "mainShowType", "code")));
+                    var7.setShowType(Helper.getString(var10, "showType"));
                     List var11 = Helper.getList(var10, "locationTypeJsonList");
                     if (CollectionUtils.isEmpty(var11)) continue;
                     List<AdUnit> var12 = new ArrayList<>();
@@ -69,7 +72,10 @@ public class BaseInfo {
                         if (Helper.valid(var14, "TEXT", "type")) {
                             var15.setType(ShowType.TEXT);
                             var15.setLimit(Helper.getString(var14, "length"));
+                            var15.setContent(Helper.repeat(var15.getLimit()));
                         } else {
+                            var15.setContent(Settings.DEFAULT_URL);
+                            var15.setAppendix(Settings.DEFAULT_MD5);
                             var15.setType(ShowType.PICTURE);
                             var15.setLimit(Helper.getString(var14, "size"));
                         }
@@ -84,9 +90,15 @@ public class BaseInfo {
         return var4;
     }
 
-    public boolean newPackage(String id, List<String> info) {
-
-        return true;
+    public AdPackage getPackage(String id) {
+        if (id == null) return null;
+        List<AdPackage> var0 = getPackages();
+        if (var0 == null) return null;
+        for (AdPackage var1 : getPackages()) {
+            if (id.equals(var1.getId()))
+                return var1;
+        }
+        return null;
     }
 }
 

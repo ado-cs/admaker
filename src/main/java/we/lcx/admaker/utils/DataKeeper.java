@@ -1,17 +1,14 @@
 package we.lcx.admaker.utils;
 
-import we.lcx.admaker.common.AdPackage;
 import we.lcx.admaker.common.Cache;
-
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by LinChenxiao on 2019/12/13 10:30
  **/
 public class DataKeeper {
-    private static final ConcurrentHashMap<String, AdPackage> packages = new ConcurrentHashMap<>();
-
     private static final ConcurrentHashMap<String, Cache> caches = new ConcurrentHashMap<>();
+
 
     public static void putCache(String key, Object value, long ttl) {
         if (key == null || value == null) return;
@@ -29,9 +26,5 @@ public class DataKeeper {
             return null;
         }
         return cache.getData();
-    }
-
-    public static void dump() {
-
     }
 }

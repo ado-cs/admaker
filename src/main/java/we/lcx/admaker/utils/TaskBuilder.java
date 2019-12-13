@@ -35,9 +35,15 @@ public class TaskBuilder {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     public TaskBuilder param(String key, Object value) {
         if (task.getParams() == null) task.setParams(new HashMap<>());
-        task.getParams().put(key, value);
+        if (key != null && key.indexOf(' ') != -1) {
+            String[] keys = key.split(" ");
+            Map map = Helper.getMap(task.getParams(), keys);
+            if (map != null) map.put(keys[keys.length - 1], value);
+        }
+        else task.getParams().put(key, value);
         return this;
     }
 
