@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title>Latte</title>
+    <link href="https://cdn.bootcss.com/semantic-ui/2.4.1/semantic.min.css" rel="stylesheet">
+    <link href="res/common.css" rel="stylesheet">
+</head>
+<body>
+<div class="ui container">
+    <div class="ui menu">
+        <a class="item home" data-tab="tab1">
+            <i class="home icon"></i> 首页
+        </a>
+        <a class="item" data-tab="tab2">
+            <i class="options icon"></i> 配置
+        </a>
+        <a class="item" data-tab="tab3">
+            <i class="unlock alternate icon"></i> 管理
+        </a>
+        <div class="right menu">
+            <div class="item">
+                <div class="ui transparent icon input">
+                    <input type="text" placeholder="Search...">
+                    <i class="search link icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ui segment tab" data-tab="tab1">
+        <form class="ui form">
+            <div class="three fields">
+
+                <div class="required field">
+                    <label>广告类型</label>
+                    <div class="ui selection dropdown">
+                        <input type="hidden" name="gender">
+                        <div class="default text">广告类型</div>
+                        <i class="dropdown icon"></i>
+                        <div class="menu">
+                            <div class="item" data-value="a">合约</div>
+                            <div class="item" data-value="b">竞价</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="required field">
+                    <label>计费方式</label>
+                    <div class="ui selection dropdown">
+                        <input type="hidden" name="gender">
+                        <div class="default text">计费方式</div>
+                        <i class="dropdown icon"></i>
+                        <div class="menu">
+                            <div class="item" data-value="a">CPT</div>
+                            <div class="item" data-value="b">CPM</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="required field">
+                    <label>计费方式</label>
+                    <div class="ui selection dropdown">
+                        <input type="hidden" name="gender">
+                        <div class="default text">计费方式</div>
+                        <i class="dropdown icon"></i>
+                        <div class="menu">
+                            <div class="item" data-value="a">PDB</div>
+                            <div class="item" data-value="b">PD</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="required field">
+                <label>广告名</label>
+                <input type="text" name="name" placeholder="广告名">
+            </div>
+            <div class="required field">
+                <label>版位</label>
+                <select class="ui search dropdown">
+                    <option value="AL">合约</option>
+                    <option value="AL">竞价</option>
+                </select>
+            </div>
+
+            <div class="two fields">
+                <div class="required field">
+                    <label>起始时间</label>
+                    <input type="date" name="begin" placeholder="广告数量">
+                </div>
+                <div class="required field">
+                    <label>结束时间</label>
+                    <input type="date" name="end" placeholder="广告数量">
+                </div>
+            </div>
+
+            <div class="required field">
+                <label>广告数量</label>
+                <input type="text" name="amount" placeholder="广告数量">
+            </div>
+            <div class="ui primary submit button">创建</div>
+        </form>
+    </div>
+    <div class="ui tab" data-tab="tab2">
+        <table class="ui basic table">
+            <thead>
+            <tr>
+                <th class="seven wide">版位名称</th>
+                <th class="three wide">版位ID</th>
+                <th class="three wide">模板</th>
+                <th class="three wide">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>John</td>
+                <td>Approved</td>
+                <td>None</td>
+                <td><a class="red" href="#">删除</a></td>
+            </tr>
+            <tr>
+                <td>Jamie</td>
+                <td>Approved</td>
+                <td>Requires call</td>
+                <td><a class="red" href="#">删除</a></td>
+            </tr>
+            <tr>
+                <td>Jill</td>
+                <td>Denied</td>
+                <td>None</td>
+                <td><a class="red" href="#">删除</a></td>
+            </tr>
+            </tbody>
+        </table>
+        <form class="ui form segment">
+            <div class="two fields">
+                <div class="required field">
+                    <label>广告版位</label>
+                    <select class="ui search dropdown">
+                        <option value="AL">合约</option>
+                        <option value="AL">竞价</option>
+                    </select>
+                </div>
+                <div class="three fields padding">
+                    <div class="field">
+                        <label>版位id</label>
+                        <input type="text" name="id" disabled value="1">
+                    </div>
+                    <div class="field">
+                        <label>模板</label>
+                        <input type="text" name="model" disabled>
+                    </div>
+                    <div class="field">
+                        <label>图片尺寸</label>
+                        <input type="text" name="size" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <div class="two fields">
+                <div class="required field">
+                    <label>图片URL</label>
+                    <input type="text" name="url" placeholder="图片URL">
+                </div>
+                <div class="required field">
+                    <label>图片MD5</label>
+                    <input type="text" name="md5" placeholder="图片MD5">
+                </div>
+            </div>
+
+            <div class="ui buttons">
+                <div class="ui positive button">创建</div>
+                <div class="or"></div>
+                <div class="ui primary button disabled">保存</div>
+            </div>
+        </form>
+    </div>
+    <div class="ui segment tab" data-tab="tab3">
+
+    </div>
+</div>
+<script type="text/javascript" src="dev/jquery.js"></script>
+<script type="text/javascript" src="dev/semantic.js"></script>
+<script type="text/javascript" src="res/common.js"></script>
+</body>
+</html>
