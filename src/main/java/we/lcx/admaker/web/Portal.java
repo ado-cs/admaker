@@ -18,10 +18,10 @@ public class Portal {
 
     @GetMapping("/")
     public String index() {
-        return "index.html";
+        return "index";
     }
 
-    @GetMapping("/list")
+    @GetMapping("/j/list")
     @ResponseBody
     public List<AdPackage> list() {
         return baseInfo.getPackages();

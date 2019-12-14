@@ -18,7 +18,7 @@
         </a>
     </div>
     <div class="ui segment tab" data-tab="tab1">
-        <form class="ui form">
+        <form class="ui form loading">
             <div class="three fields">
                 <div class="required field">
                     <label>广告类型</label>
@@ -66,9 +66,7 @@
             </div>
             <div class="required field">
                 <label>版位</label>
-                <select class="ui search dropdown">
-                    <option value="AL">合约</option>
-                    <option value="AL">竞价</option>
+                <select name="package" class="ui search dropdown">
                 </select>
             </div>
 
@@ -87,12 +85,27 @@
                 <label>广告数量</label>
                 <input type="text" name="amount" placeholder="广告数量">
             </div>
-            <div class="ui primary submit button">创建</div>
+            <div id="create" class="ui primary submit button">创建</div>
         </form>
     </div>
 
     <div class="ui segment tab" data-tab="tab2">
 
+    </div>
+
+    <div class="ui basic modal">
+        <i class="close icon"></i>
+        <div class="header">
+        </div>
+        <div class="content">
+            <div class="description">
+            </div>
+        </div>
+            <div class="fluid ui inverted buttons">
+                <div class="ui blue basic inverted button">
+                    确认
+                </div>
+            </div>
     </div>
 </div>
 <script type="text/javascript" src="dev/jquery.js"></script>
