@@ -1,36 +1,33 @@
 package we.lcx.admaker.common;
 
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import java.util.List;
+import lombok.Data;
 
 /**
  * Created by LinChenxiao on 2019/12/12 19:03
  **/
+@Data
 public class Result {
-    private ResponseEntity<String> entity;
+    private Boolean success;
+    private String message;
+    private Object data;
 
-    public static Result of (ResponseEntity<String> entity) {
+    public static Result ok() {
         Result result = new Result();
-        result.entity = entity;
+        result.success = true;
         return result;
     }
 
-    public boolean isSuccess() {
-        return entity.getStatusCode() == HttpStatus.OK;
+    public static Result ok(Object data) {
+        Result result = new Result();
+        result.success = true;
+        result.data = data;
+        return result;
     }
 
-    public HttpHeaders getHeader() {
-        return entity.getHeaders();
-    }
-
-    public List<String> getCookie() {
-        HttpHeaders headers = entity.getHeaders();
-        return headers == null ? null : headers.get("Cookie");
-    }
-
-    public String getBody() {
-        return entity.getBody();
+    public static Result fail(String message) {
+        Result result = new Result();
+        result.success = false;
+        result.message = message;
+        return result;
     }
 }

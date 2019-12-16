@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 import we.lcx.admaker.common.AdPackage;
 import we.lcx.admaker.common.AdUnit;
 import we.lcx.admaker.common.consts.Cookies;
@@ -16,6 +15,8 @@ import we.lcx.admaker.utils.DataKeeper;
 import we.lcx.admaker.utils.Helper;
 import we.lcx.admaker.utils.HttpExecutor;
 import we.lcx.admaker.utils.TaskBuilder;
+
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,13 @@ import java.util.Map;
 @Slf4j
 @Service
 public class BaseInfo {
+    @PostConstruct
+    public void login() {
+        HttpExecutor.doRequest(
+                TaskBuilder.get(URLs.BASE_URL + URLs.MAISUI_LOGIN)
+                        .cookie(Cookies.MAISUI)
+                        .build()).getBody();
+    }
 
     @SuppressWarnings("unchecked")
     public List<AdPackage> getPackages() {

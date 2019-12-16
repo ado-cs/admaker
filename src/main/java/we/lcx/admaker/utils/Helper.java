@@ -10,6 +10,7 @@ import java.util.UUID;
  * Created by LinChenxiao on 2019/12/12 19:29
  **/
 public class Helper {
+
     public static String parseBody(String body, String key) {
         if (StringUtils.isEmpty(body)) return null;
         int i = body.indexOf('"' + key + '"');
@@ -97,5 +98,9 @@ public class Helper {
         int i = str.indexOf(oldStr);
         if (i == -1) return str;
         return str.substring(0, i) + newStr + str.substring(i + oldStr.length());
+    }
+
+    public static String parseDate(String date) {
+        return date + "T00:00:00.000Z";
     }
 }

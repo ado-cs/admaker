@@ -7,6 +7,7 @@ public interface URLs {
     String BASE_URL = "http://iadluck.netease.com/test/adman-gateway-performance/";
     String URL = BASE_URL + "sponsor/";
 
+    String MAISUI_LOGIN = "login";
     String MAISUI_PLAN = "adPlan/create";
     String MAISUI_PRICE = "campaignPackage/getAdvisedPrice";
     String MAISUI_CREATE = "adform/create";

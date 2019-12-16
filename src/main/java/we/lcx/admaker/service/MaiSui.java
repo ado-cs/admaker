@@ -2,10 +2,11 @@ package we.lcx.admaker.service;
 
 import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import we.lcx.admaker.common.AdPackage;
 import we.lcx.admaker.common.AdUnit;
-import we.lcx.admaker.common.Result;
 import we.lcx.admaker.common.Task;
 import we.lcx.admaker.common.consts.Cookies;
 import we.lcx.admaker.common.consts.Settings;
@@ -13,16 +14,11 @@ import we.lcx.admaker.common.enums.BiddingMode;
 import we.lcx.admaker.common.consts.Params;
 import we.lcx.admaker.common.consts.URLs;
 import we.lcx.admaker.common.enums.ShowType;
-import we.lcx.admaker.utils.DataKeeper;
 import we.lcx.admaker.utils.Helper;
 import we.lcx.admaker.utils.HttpExecutor;
 import we.lcx.admaker.utils.TaskBuilder;
-
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by LinChenxiao on 2019/12/12 19:21
@@ -104,14 +100,14 @@ public class MaiSui {
                     .param("bidAmountMax", var2)
                     .param("billingMode", mode.getCode())
                     .param("adCreativeList materialList", var9)
-                    .param("beginDate", begin)
-                    .param("endDate", end)
+                    .param("beginDate", Helper.parseDate(begin))
+                    .param("endDate", Helper.parseDate(end))
                     .build());
         }
         int var11 = 0;
         List<Task> var12 = new ArrayList<>();
-        for (Result var13 : HttpExecutor.execute(var3)) {
-            if (!var13.isSuccess()) continue;
+        for (ResponseEntity<String> var13 : HttpExecutor.execute(var3)) {
+            if (var13.getStatusCode() != HttpStatus.OK) continue;
             Map var14 = JSON.parseObject(var13.getBody(), Map.class);
             if (Helper.valid(var14, "false", "success")) continue;
             String var15 = Helper.parseBody(var13.getBody(), "result");
@@ -128,8 +124,8 @@ public class MaiSui {
             }
         }
         if (var12.size() == 0) return 0;
-        for (Result var13 : HttpExecutor.execute(var12)) {
-            if (var13.isSuccess()) var11++;
+        for (ResponseEntity<String> var13 : HttpExecutor.execute(var12)) {
+            if (var13.getStatusCode() == HttpStatus.OK) var11++;
         }
         return var11;
     }

@@ -4,14 +4,15 @@ function msgBox(title, content) {
     $('.basic.modal').modal('show')
 }
 
-let rule = {type: '选择广告类型', fee: '选择计费方式', deal: '选择排期类型', name: '填写广告名', package: '选择版位', begin: '选择起始时间', end: '选择结束时间', amount: '填写广告数量'};
+const rule = {type: '选择广告类型', fee: '选择计费方式', name: '填写广告名', package: '选择版位', begin: '选择起始时间', end: '选择结束时间', amount: '填写广告数量'};
 
 function initRules() {
     let dict = {};
     for (let k in rule) {
-        dict[k] = {identifier: k, rules: [{type: 'empty', prompt: rule[k]}]}
+        dict[k] = {identifier: k, rules: [{type: 'empty', prompt: '请' + rule[k]}]}
     }
-    rule = dict;
+    $('.ui.form').form({fields: dict, inline: true, on: 'change',
+        onSuccess: function(e) { e.preventDefault();}});
 }
 
 function initEvents() {
@@ -23,27 +24,48 @@ function initEvents() {
     $('input[name="begin"]').val(date.getFullYear() + '-' + (date.getMonth() < 9 ? '0' : '') + (date.getMonth() + 1) + '-' + (date.getDate() < 10 ? '0' : '') + date.getDate());
     $('input[name="type"]').bind('change', function () {
         let deal = $('#deal');
-        console.info(0);
         if ($(this).val() === '1') {
             $('input[name="fee"]').siblings('.menu').html('<div class="item" data-value="1">CPT</div><div class="item" data-value="2">CPM</div>');
             deal.removeClass('hidden');
-            deal.removeClass('required');
-            //rule['deal']['optional'] = true;
+            $('.ui.form').form('add rule', 'deal', {rules: [{type: 'empty', prompt: '请选择排期类型'}]})
         }
         else {
             $('input[name="fee"]').siblings('.menu').html('<div class="item" data-value="3">CPC</div><div class="item" data-value="2">CPM</div>');
             deal.addClass('hidden');
-            deal.addClass('required');
-            //rule['deal']['optional'] = false;
+            $('.ui.form').form('remove field', 'deal')
         }
     });
     $('.ui.blue.basic.inverted.button').bind('click', function () {
         $('.basic.modal').modal('hide')
     });
-    $('#create').bind('click', function () {
-        $('.ui.form').form(rule, {inline: true, on: 'blur'});
-        console.info(1)
-    })
+    $.fn.api.settings.api = {
+        'create': '/j/create'
+    };
+    $('form .submit.button').api({
+            action: 'create',
+            serializeForm: true,
+            method: 'post',
+            beforeSend: function(settings) {
+                if (!$('.ui.form').form('is valid')) return false;
+                $('.ui.form').addClass('loading');
+                return settings;
+            },
+            onResponse: function(response) {
+                $('.ui.form').removeClass('loading');
+                if (response) {
+                    if (response.success) msgBox('创建成功', '广告单已全部创建成功！');
+                    else if (response.message) msgBox('创建失败', response.message);
+                    else msgBox('创建失败', response.data + '个广告单创建失败！');
+
+                }
+                else msgBox('创建失败', '无响应！');
+                return response;
+            },
+            onError: function(errorMessage) {
+                msgBox('创建失败', errorMessage);
+            }
+        })
+    ;
 }
 
 function initData() {
@@ -55,7 +77,7 @@ function initData() {
             for(let v of data) {
                 html += '<option value="' + v.id + '">' + v.name + '</option>';
             }
-            $('select[name="package"]').html(html);
+            $('select[name="camp"]').html(html);
             $('.ui.form').removeClass('loading')
         },
         error: function(XMLHttpRequest) {
@@ -67,8 +89,7 @@ function initData() {
 $(document).ready(() => {
     initRules();
     initEvents();
-    //initData()
-    $('.ui.form').removeClass('loading')
+    initData()
 });
 
 

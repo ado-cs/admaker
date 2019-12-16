@@ -5,7 +5,6 @@ import org.springframework.http.*;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
-import we.lcx.admaker.common.Result;
 import we.lcx.admaker.common.Task;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,10 +21,10 @@ import java.util.concurrent.Executors;
 public class HttpExecutor {
     private static final ExecutorService executor = Executors.newFixedThreadPool(4);
 
-    public static List<Result> execute(List<Task> tasks) {
+    public static List<ResponseEntity<String>> execute(List<Task> tasks) {
         if (CollectionUtils.isEmpty(tasks)) return new ArrayList<>();
-        List<CompletableFuture<Result>> futureList = new ArrayList<>();
-        ConcurrentLinkedQueue<Result> results = new ConcurrentLinkedQueue<>();
+        List<CompletableFuture<ResponseEntity<String>>> futureList = new ArrayList<>();
+        ConcurrentLinkedQueue<ResponseEntity<String>> results = new ConcurrentLinkedQueue<>();
         for (Task task : tasks) {
             futureList.add(CompletableFuture.supplyAsync(() -> doRequest(task), executor).whenComplete((v, e) -> {
                 if (e != null) log.error("failed to execute, e={}", e);
@@ -42,7 +41,7 @@ public class HttpExecutor {
     }
 
     @SuppressWarnings("unchecked")
-    public static Result doRequest(Task task) {
+    public static ResponseEntity<String> doRequest(Task task) {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         if (!StringUtils.isEmpty(task.getCookie())) {
@@ -67,6 +66,6 @@ public class HttpExecutor {
             }
         }
         HttpEntity<Map> httpEntity = new HttpEntity(params, headers);
-        return Result.of(restTemplate.exchange(task.getUrl(), task.getMethod(), httpEntity, String.class));
+        return restTemplate.exchange(task.getUrl(), task.getMethod(), httpEntity, String.class);
     }
 }

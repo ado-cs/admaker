@@ -8,9 +8,17 @@ public enum BiddingMode {
     CPM(2);
 
     private int code;
+
     BiddingMode(int code) {
         this.code = code;
     }
+
+    public static BiddingMode of(int code) {
+        for (BiddingMode mode : values())
+            if (mode.code == code) return mode;
+        return null;
+    }
+
     public int getCode() {
         return code;
     }
