@@ -30,4 +30,11 @@ public class Result {
         result.message = message;
         return result;
     }
+
+    public static Result fail(Object data) {
+        Result result = new Result();
+        result.success = false;
+        result.data = data;
+        return result;
+    }
 }

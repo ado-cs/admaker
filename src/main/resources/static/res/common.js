@@ -26,13 +26,17 @@ function initEvents() {
         let deal = $('#deal');
         if ($(this).val() === '1') {
             $('input[name="fee"]').siblings('.menu').html('<div class="item" data-value="1">CPT</div><div class="item" data-value="2">CPM</div>');
-            deal.removeClass('hidden');
-            $('.ui.form').form('add rule', 'deal', {rules: [{type: 'empty', prompt: '请选择排期类型'}]})
+            if (deal.hasClass('hidden')) {
+                deal.removeClass('hidden');
+                $('.ui.form').form('add rule', 'deal', {rules: [{type: 'empty', prompt: '请选择排期类型'}]})
+            }
         }
         else {
             $('input[name="fee"]').siblings('.menu').html('<div class="item" data-value="3">CPC</div><div class="item" data-value="2">CPM</div>');
-            deal.addClass('hidden');
-            $('.ui.form').form('remove field', 'deal')
+            if (!deal.hasClass('hidden')) {
+                deal.addClass('hidden');
+                $('.ui.form').form('remove field', 'deal')
+            }
         }
     });
     $('.ui.blue.basic.inverted.button').bind('click', function () {
@@ -53,10 +57,9 @@ function initEvents() {
             onResponse: function(response) {
                 $('.ui.form').removeClass('loading');
                 if (response) {
-                    if (response.success) msgBox('创建成功', '广告单已全部创建成功！');
+                    if (response.success) msgBox('创建成功', '广告单创建成功！');
                     else if (response.message) msgBox('创建失败', response.message);
                     else msgBox('创建失败', response.data + '个广告单创建失败！');
-
                 }
                 else msgBox('创建失败', '无响应！');
                 return response;
@@ -64,8 +67,8 @@ function initEvents() {
             onError: function(errorMessage) {
                 msgBox('创建失败', errorMessage);
             }
-        })
-    ;
+        });
+
 }
 
 function initData() {

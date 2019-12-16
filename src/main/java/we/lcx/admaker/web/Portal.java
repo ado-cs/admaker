@@ -55,7 +55,7 @@ public class Portal {
             else {
                 return Result.fail("不支持的广告单类型！");
             }
-            return r == amount ? Result.ok() : Result.fail(String.valueOf(amount - r));
+            return r == amount ? Result.ok() : Result.fail(amount - r);
         }
         catch (Exception e) {
             return Result.fail(e.getMessage());
