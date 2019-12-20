@@ -17,9 +17,7 @@ function initRules() {
 
 function initEvents() {
     let date = new Date();
-    $('.ui.menu .item').tab();
     $('.ui.dropdown').dropdown();
-    $('.ui.menu .item.home').click();
     $('input[name="name"]').val('压测' + date.getFullYear() + (date.getMonth() < 9 ? '0' : '') + (date.getMonth() + 1) + (date.getDate() < 10 ? '0' : '') + date.getDate());
     $('input[name="begin"]').val(date.getFullYear() + '-' + (date.getMonth() < 9 ? '0' : '') + (date.getMonth() + 1) + '-' + (date.getDate() < 10 ? '0' : '') + date.getDate());
     $('input[name="type"]').bind('change', function () {

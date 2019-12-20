@@ -9,89 +9,75 @@
 </head>
 <body>
 <div class="ui container">
-    <div class="ui menu">
-        <a class="item home" data-tab="tab1">
-            <i class="home icon"></i> 首页
-        </a>
-        <a class="item" data-tab="tab2">
-            <i class="unlock alternate icon"></i> 管理
-        </a>
-    </div>
-    <div class="ui segment tab" data-tab="tab1">
-        <form class="ui form loading">
-            <div class="three fields">
-                <div class="required field">
-                    <label>广告类型</label>
-                    <div class="ui selection dropdown">
-                        <input type="hidden" name="type">
-                        <div class="default text">广告类型</div>
-                        <i class="dropdown icon"></i>
-                        <div class="menu">
-                            <div class="item" data-value="1">合约</div>
-                            <div class="item" data-value="2">竞价</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="required field">
-                    <label>计费方式</label>
-                    <div class="ui selection dropdown">
-                        <input type="hidden" name="fee">
-                        <div class="default text">计费方式</div>
-                        <i class="dropdown icon"></i>
-                        <div class="menu">
-                        </div>
-                    </div>
-                </div>
-
-                <div id="deal" class="required field hidden">
-                    <label>排期类型</label>
-                    <div class="ui selection dropdown">
-                        <input type="hidden" name="deal">
-                        <div class="default text">排期类型</div>
-                        <i class="dropdown icon"></i>
-                        <div class="menu">
-                            <div class="item" data-value="1">PDB</div>
-                            <div class="item" data-value="2">PD</div>
-                            <div class="item" data-value="3">抄底</div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
+    <form class="ui segment form">
+        <div class="three fields">
             <div class="required field">
-                <label>广告名</label>
-                <input type="text" name="name" placeholder="广告名">
-            </div>
-            <div class="required field">
-                <label>版位</label>
-                <select name="camp" class="ui search dropdown">
-                </select>
-            </div>
-
-            <div class="two fields">
-                <div class="required field">
-                    <label>起始时间</label>
-                    <input type="date" name="begin">
-                </div>
-                <div class="required field">
-                    <label>结束时间</label>
-                    <input type="date" name="end">
+                <label>广告类型</label>
+                <div class="ui selection dropdown">
+                    <input type="hidden" name="type">
+                    <div class="default text">广告类型</div>
+                    <i class="dropdown icon"></i>
+                    <div class="menu">
+                        <div class="item" data-value="1">合约</div>
+                        <div class="item" data-value="2">竞价</div>
+                    </div>
                 </div>
             </div>
 
             <div class="required field">
-                <label>广告数量</label>
-                <input type="number" name="amount" placeholder="广告数量">
+                <label>计费方式</label>
+                <div class="ui selection dropdown">
+                    <input type="hidden" name="fee">
+                    <div class="default text">计费方式</div>
+                    <i class="dropdown icon"></i>
+                    <div class="menu">
+                    </div>
+                </div>
             </div>
-            <div id="create" class="ui primary submit button">创建</div>
-        </form>
-    </div>
 
-    <div class="ui segment tab" data-tab="tab2">
+            <div id="deal" class="required field hidden">
+                <label>排期类型</label>
+                <div class="ui selection dropdown">
+                    <input type="hidden" name="deal">
+                    <div class="default text">排期类型</div>
+                    <i class="dropdown icon"></i>
+                    <div class="menu">
+                        <div class="item" data-value="1">PDB</div>
+                        <div class="item" data-value="2">PD</div>
+                        <div class="item" data-value="3">抄底</div>
+                    </div>
+                </div>
+            </div>
 
-    </div>
+        </div>
+
+        <div class="required field">
+            <label>广告名</label>
+            <input type="text" name="name" placeholder="广告名">
+        </div>
+        <div class="required field">
+            <label>版位</label>
+            <select name="camp" class="ui search dropdown">
+            </select>
+        </div>
+
+        <div class="two fields">
+            <div class="required field">
+                <label>起始时间</label>
+                <input type="date" name="begin">
+            </div>
+            <div class="required field">
+                <label>结束时间</label>
+                <input type="date" name="end">
+            </div>
+        </div>
+
+        <div class="required field">
+            <label>广告数量</label>
+            <input type="number" name="amount" placeholder="广告数量">
+        </div>
+        <div id="create" class="ui primary submit button">创建</div>
+    </form>
 
     <div class="ui basic modal">
         <i class="close icon"></i>
@@ -101,11 +87,11 @@
             <div class="description">
             </div>
         </div>
-            <div class="fluid ui inverted buttons">
-                <div class="ui blue basic inverted button">
-                    确认
-                </div>
+        <div class="fluid ui inverted buttons">
+            <div class="ui blue basic inverted button">
+                确认
             </div>
+        </div>
     </div>
 </div>
 <script type="text/javascript" src="dev/jquery.js"></script>

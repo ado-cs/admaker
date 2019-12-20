@@ -4,12 +4,13 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
  * Created by LinChenxiao on 2019/12/12 19:29
  **/
-public class Helper {
+public class WordsTool {
 
     public static String parseBody(String body, String key) {
         if (StringUtils.isEmpty(body)) return null;
@@ -44,25 +45,25 @@ public class Helper {
         return "_" + (s.length() <= length ? s : s.substring(0, length));
     }
 
+    public static boolean valid(String body, String target, String key) {
+        return Objects.equals(parseBody(body, key), target);
+    }
+
     public static boolean valid(Map map, String target, String... path) {
         return target != null && target.equalsIgnoreCase(getString(map, path));
     }
 
     public static String getString(Map map, String... path) {
-        Object obj = getObject(map, path);
+        Object obj = get(map, path.length, path);
         return obj == null ? null : obj.toString();
     }
 
     public static List getList(Map map, String... path) {
-        Object obj = getObject(map, path);
+        Object obj = get(map, path.length, path);
         return obj instanceof List ? (List) obj : null;
     }
 
-    private static Object getObject(Map map, String... path) {
-        return get(map, path.length, path);
-    }
-
-    public static Map getMap(Map map, String... path) {
+    static Map getMap(Map map, String... path) {
         Object obj = get(map, path.length - 1, path);
         return obj instanceof Map ? (Map) obj : null;
     }
@@ -77,7 +78,6 @@ public class Helper {
             else if (obj == null || i < path.length - 1) return null;
         }
         return obj;
-
     }
 
     public static String repeat(String limit) {

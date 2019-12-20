@@ -2,7 +2,7 @@ package we.lcx.admaker;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import we.lcx.admaker.service.BaseInfo;
+import we.lcx.admaker.service.Basic;
 import we.lcx.admaker.service.MaiSui;
 import javax.annotation.Resource;
 
@@ -13,7 +13,7 @@ class AdmakerApplicationTests {
     private MaiSui maiSui;
 
     @Resource
-    private BaseInfo baseInfo;
+    private Basic basic;
 
     @Test
     void contextLoads() {

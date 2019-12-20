@@ -40,7 +40,7 @@ public class TaskBuilder {
         if (task.getParams() == null) task.setParams(new HashMap<>());
         if (key != null && key.indexOf(' ') != -1) {
             String[] keys = key.split(" ");
-            Map map = Helper.getMap(task.getParams(), keys);
+            Map map = WordsTool.getMap(task.getParams(), keys);
             if (map != null) map.put(keys[keys.length - 1], value);
         }
         else task.getParams().put(key, value);
