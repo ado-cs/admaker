@@ -5,6 +5,8 @@ package we.lcx.admaker.common.consts;
  **/
 public interface URLs {
     String YUNYING_URL = "sponsor/";
+    String YUNYING_QUERY = "operator/flight/getFlightTemplate";
+    String YUNYING_LIST = "operator/flight/list";
 
     String MAISUI_LOGIN = "login";
     String MAISUI_PLAN = "adPlan/create";

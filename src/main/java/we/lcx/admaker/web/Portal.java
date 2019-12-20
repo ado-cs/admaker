@@ -4,17 +4,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import we.lcx.admaker.common.AdPackage;
-import we.lcx.admaker.common.Result;
+import we.lcx.admaker.common.basic.Result;
 import we.lcx.admaker.common.enums.AdType;
-import we.lcx.admaker.common.enums.BiddingMode;
 import we.lcx.admaker.service.Basic;
-import we.lcx.admaker.service.MaiSui;
 import javax.annotation.Resource;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
+import java.util.Map;
 
 /**
  * Created by LinChenxiao on 2019/12/13 17:02
@@ -24,18 +21,16 @@ public class Portal {
     private static final DateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     @Resource
     private Basic basic;
-    @Resource
-    private MaiSui maiSui;
 
     @GetMapping("/")
     public String index() {
         return "index";
     }
 
-    @GetMapping("/j/list")
+    @GetMapping("/j/query")
     @ResponseBody
-    public Collection<AdPackage> list() {
-        return basic.getPackages();
+    public Map<Integer, String> query(Integer type, String keyword) {
+        return basic.queryFlight(type, keyword);
     }
 
     @PostMapping("/j/create")
@@ -49,7 +44,7 @@ public class Portal {
             r = 1;
         }
         else if (AdType.isBidding(type)){
-            r = maiSui.createAd(camp, BiddingMode.of(fee), name, begin, end, amount);
+            r = 2;//maiSui.createAd(camp, BiddingMode.of(fee), name, begin, end, amount);
         }
         else {
             return Result.fail("不支持的广告单类型！");

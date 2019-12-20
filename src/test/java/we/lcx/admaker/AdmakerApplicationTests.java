@@ -3,14 +3,11 @@ package we.lcx.admaker;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import we.lcx.admaker.service.Basic;
-import we.lcx.admaker.service.MaiSui;
+
 import javax.annotation.Resource;
 
 @SpringBootTest
 class AdmakerApplicationTests {
-
-    @Resource
-    private MaiSui maiSui;
 
     @Resource
     private Basic basic;

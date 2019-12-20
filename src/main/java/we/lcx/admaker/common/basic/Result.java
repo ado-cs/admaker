@@ -1,4 +1,4 @@
-package we.lcx.admaker.common;
+package we.lcx.admaker.common.basic;
 
 import lombok.Data;
 
