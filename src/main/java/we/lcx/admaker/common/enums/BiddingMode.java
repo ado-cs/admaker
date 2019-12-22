@@ -14,9 +14,7 @@ public enum BiddingMode {
     }
 
     public static BiddingMode of(int code) {
-        for (BiddingMode mode : values())
-            if (mode.code == code) return mode;
-        return null;
+        return code == 1 ? CPC : CPM;
     }
 
     public int getCode() {

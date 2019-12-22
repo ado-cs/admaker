@@ -2,22 +2,3 @@ body {
     padding-top: 12px;
     padding-bottom: 12px
 }
-
-td a {
-    color: red
-}
-td a:hover {
-     color: #b00000
- }
-
-.padding {
-    padding-left: 7px;
-}
-
-td {
-    cursor: pointer;
-}
-
-.hidden {
-    display: none;
-}

@@ -7,6 +7,7 @@ public interface URLs {
     String YUNYING_URL = "sponsor/";
     String YUNYING_QUERY = "operator/flight/getFlightTemplate";
     String YUNYING_LIST = "operator/flight/list";
+    String YUNYING_CREATE = "";//todo
 
     String MAISUI_LOGIN = "login";
     String MAISUI_PLAN = "adPlan/create";

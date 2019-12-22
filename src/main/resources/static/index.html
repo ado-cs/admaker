@@ -9,14 +9,27 @@
 </head>
 <body>
 <div class="ui container">
-    <form class="ui segment form">
-        <div class="three fields">
-            <div class="required field">
-                <label>广告类型</label>
-                <div class="ui selection dropdown">
-                    <input type="hidden" name="type">
-                    <div class="default text">广告类型</div>
+    <form class="ui attached segment form">
+        <div class="fields">
+            <div class="required eight wide field">
+                <label>广告位</label>
+                <div class="ui compact search selection dropdown">
+                    <input type="hidden" name="flight">
                     <i class="dropdown icon"></i>
+                    <div class="default text">广告位</div>
+                    <div class="menu">
+                        <div class="item" data-value="1_1">合约1</div>
+                        <div class="item" data-value="2_2">竞价1</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="required four wide field">
+                <label>类型</label>
+                <div class="ui compact selection dropdown">
+                    <input type="hidden" name="type" value="1">
+                    <i class="dropdown icon"></i>
+                    <div class="default text">类型</div>
                     <div class="menu">
                         <div class="item" data-value="1">合约</div>
                         <div class="item" data-value="2">竞价</div>
@@ -24,78 +37,96 @@
                 </div>
             </div>
 
-            <div class="required field">
-                <label>计费方式</label>
-                <div class="ui selection dropdown">
-                    <input type="hidden" name="fee">
-                    <div class="default text">计费方式</div>
-                    <i class="dropdown icon"></i>
-                    <div class="menu">
+            <div class="required four wide field">
+                <label>数量</label>
+                <input type="number" name="amount" placeholder="数量">
+            </div>
+
+        </div>
+        <div id="more" class="transition hidden">
+            <div class="ui horizontal divider">
+                更多设置
+            </div>
+            <div class="three fields">
+                <div class="field">
+                    <label>售卖方式</label>
+                    <div class="ui compact selection dropdown">
+                        <input type="hidden" name="deal" value="1">
+                        <i class="dropdown icon"></i>
+                        <div class="default text">售卖方式</div>
+                        <div class="menu">
+                            <div class="active item" data-value="1">PDB</div>
+                            <div class="item" data-value="2">PD</div>
+                            <div class="item" data-value="3">抄底</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>计费方式</label>
+                    <div class="ui compact selection dropdown">
+                        <input type="hidden" name="fee" value="1">
+                        <i class="dropdown icon"></i>
+                        <div class="default text">计费方式</div>
+                        <div class="menu">
+                            <div class="active item" data-value="1">CPT</div>
+                            <div class="item" data-value="2">CPM</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>流量</label>
+                    <div class="ui compact selection dropdown">
+                        <input type="hidden" name="flow" value="1">
+                        <i class="dropdown icon"></i>
+                        <div class="default text">流量</div>
+                        <div class="menu">
+                            <div class="active item" data-value="1">全量</div>
+                            <div class="item" data-value="2">1/2</div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div id="deal" class="required field hidden">
-                <label>排期类型</label>
-                <div class="ui selection dropdown">
-                    <input type="hidden" name="deal">
-                    <div class="default text">排期类型</div>
-                    <i class="dropdown icon"></i>
-                    <div class="menu">
-                        <div class="item" data-value="1">PDB</div>
-                        <div class="item" data-value="2">PD</div>
-                        <div class="item" data-value="3">抄底</div>
-                    </div>
+
+            <div class="field">
+                <label>广告名称前缀</label>
+                <input type="text" name="name" placeholder="广告名称前缀">
+            </div>
+
+            <div class="two fields">
+                <div class="field">
+                    <label>起始时间</label>
+                    <input type="date" name="begin">
+                </div>
+
+                <div class="field">
+                    <label>结束时间</label>
+                    <input type="date" name="end">
                 </div>
             </div>
-
         </div>
-
-        <div class="required field">
-            <label>广告名</label>
-            <input type="text" name="name" placeholder="广告名">
-        </div>
-        <div class="required field">
-            <label>版位</label>
-            <select name="camp" class="ui search dropdown">
-            </select>
-        </div>
-
-        <div class="two fields">
-            <div class="required field">
-                <label>起始时间</label>
-                <input type="date" name="begin">
-            </div>
-            <div class="required field">
-                <label>结束时间</label>
-                <input type="date" name="end">
-            </div>
-        </div>
-
-        <div class="required field">
-            <label>广告数量</label>
-            <input type="number" name="amount" placeholder="广告数量">
-        </div>
-        <div id="create" class="ui primary submit button">创建</div>
     </form>
+    <div class="ui two bottom attached buttons">
+        <div id="create" class="ui primary submit button">创建</div>
+        <div id="settings" class="ui button">更多设置</div>
 
-    <div class="ui basic modal">
-        <i class="close icon"></i>
+    </div>
+
+    <div class="ui mini modal">
         <div class="header">
         </div>
         <div class="content">
             <div class="description">
             </div>
         </div>
-        <div class="fluid ui inverted buttons">
-            <div class="ui blue basic inverted button">
+        <div class="actions">
+            <div class="ui primary deny button">
                 确认
             </div>
         </div>
     </div>
 </div>
 <script type="text/javascript" src="dev/jquery.js"></script>
-<script src="https://cdn.bootcss.com/jquery-serialize-object/2.5.0/jquery.serialize-object.min.js"></script>
 <script type="text/javascript" src="dev/semantic.js"></script>
 <script type="text/javascript" src="res/common.js"></script>
 </body>

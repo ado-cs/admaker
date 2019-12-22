@@ -1,4 +1,4 @@
-package we.lcx.admaker.common.basic;
+package we.lcx.admaker.common;
 
 import lombok.Data;
 
@@ -9,7 +9,7 @@ import lombok.Data;
 public class Result {
     private Boolean success;
     private String message;
-    private Object data;
+    private Object results;
 
     public static Result ok() {
         Result result = new Result();
@@ -17,10 +17,10 @@ public class Result {
         return result;
     }
 
-    public static Result ok(Object data) {
+    public static Result ok(Object results) {
         Result result = new Result();
         result.success = true;
-        result.data = data;
+        result.results = results;
         return result;
     }
 
@@ -28,13 +28,6 @@ public class Result {
         Result result = new Result();
         result.success = false;
         result.message = message;
-        return result;
-    }
-
-    public static Result fail(Object data) {
-        Result result = new Result();
-        result.success = false;
-        result.data = data;
         return result;
     }
 }

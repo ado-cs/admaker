@@ -1,4 +1,4 @@
-package we.lcx.admaker.common.basic;
+package we.lcx.admaker.common;
 
 import lombok.Data;
 import org.springframework.http.HttpMethod;
@@ -36,7 +36,7 @@ public class Task {
     }
 
     public Task param(Entity entity) {
-        this.params = entity.get();
+        this.params = entity.getHead();
         return this;
     }
 }
