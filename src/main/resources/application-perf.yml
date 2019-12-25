@@ -1,9 +1,17 @@
 ad:
+  login:
+    url: http://10.206.60.36:16006/mock?user=
+    account: linchenxiao@corp.netease.com
+  yunying:
+    url: http://10.200.132.146:10010/
   maisui:
-    url: http://iadluck.netease.com/test/adman-gateway-performance/
-    cookie: _ga=GA1.2.1241780726.1567580964; _ntes_nnid=db035afcff6a3915154d3476e4c64732,1567648158305; hb_MA-8993-0A09EA47275D_source=hz.oa.netease.com; NTES_PASSPORT=JLhBBK6MU8KTX0wzcF.lxYsLQg5AkGJea.SPRbslIHFSSrvakSKvOl_k2DD0ohD_8vdQdhoLsjFHcPQY8kN.O28cvuop5rKBgH3WPxnj1tCqLS0hdpk6CUITK5aZtdZU13LufWOEvd0jvAXyhmQCdcryGIkMFUDaDq19af0Lilh9UR1I8tA.3no4e; _gid=GA1.2.2037167819.1576666385; JSESSIONID=oggKMPJC_x7NDUUC25y-BjSI8rJte-eEpcuv0zB1; solarSession=bd664f48-344d-44e0-80e4-0ed841c68658; neteaseSession=d1622ffe-18bc-4139-9ec5-f0cad13d478d; NTES_SESS=Gbk7eTul0GMwX3p.x6llh1mTBY2rw0.gbuTWxpWZfAA2fD7CfFQYXmxr1dE1U5oW.fPyvNNjHT3dBe95XLv.P8iRqdqca_ZXdLCSQFpNOkCDVGQC9eMv64_vi0BWhmAe0yrd002NB2vPsLupSVgW9961XAer2taAVTz47ekpeDFMZzX108hAiQwtb9Q4ODibJaM3r7TLBZBrkySiBn5rOGCnO; S_INFO=1576737766|0|3&80##|maisui_operator; P_INFO=maisui_operator@163.com|1576737766|1|iad_maisui|00&99|zhj&1576737249&iad_maisui#zhj&330100#10#0#0|&0|iad_maisui|maisui_operator@163.com
+    url: http://10.200.132.146:10020/
   maitian:
-    url: http://iadluck.netease.com/test/adcm-backend-performance/
-    cookie: _ga=GA1.2.1241780726.1567580964; _ntes_nnid=db035afcff6a3915154d3476e4c64732,1567648158305; hb_MA-8993-0A09EA47275D_source=hz.oa.netease.com; NTES_PASSPORT=JLhBBK6MU8KTX0wzcF.lxYsLQg5AkGJea.SPRbslIHFSSrvakSKvOl_k2DD0ohD_8vdQdhoLsjFHcPQY8kN.O28cvuop5rKBgH3WPxnj1tCqLS0hdpk6CUITK5aZtdZU13LufWOEvd0jvAXyhmQCdcryGIkMFUDaDq19af0Lilh9UR1I8tA.3no4e; P_INFO=maisui_operator@163.com|1576572677|1|iad_maisui|00&99|zhj&1576568862&iad_maisui#zhj&330100#10#0#0|&0|iad_maisui|maisui_operator@163.com; _gid=GA1.2.2037167819.1576666385; JSESSIONID=oggKMPJC_x7NDUUC25y-BjSI8rJte-eEpcuv0zB1; solarSession=bd664f48-344d-44e0-80e4-0ed841c68658; neteaseSession=d1622ffe-18bc-4139-9ec5-f0cad13d478d
+    url: http://10.200.132.146:60001/
     resourceId: 1068001
-    mediaUid: 5001
+    customerId: 213290621
+    mediaId: 5001
+    contractId: 152512
+    firstIndustry: 3
+    secondIndustry: 10
+    brand: 2153992469

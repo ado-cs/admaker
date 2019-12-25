@@ -14,6 +14,6 @@ public class ExceptionController {
     @ExceptionHandler(value = Exception.class)
     public Result handle(Exception e) {
         log.error("ex={}, message={}, cause={}", e.getClass(), e.getMessage(), e.getCause());
-        return Result.fail(e.getMessage());
+        return Result.fail(e.getMessage() == null ? "未知错误" : e.getMessage());
     }
 }

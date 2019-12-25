@@ -2,6 +2,7 @@ package we.lcx.admaker.common;
 
 import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -15,6 +16,7 @@ public class TaskResult {
     private boolean success = false;
     private Entity entity;
     private HttpStatus status;
+    private HttpHeaders headers;
     private String body;
 
     public static TaskResult of(ResponseEntity<String> resp) {
@@ -27,6 +29,7 @@ public class TaskResult {
         Object success = map.get("success");
         if (!(success instanceof Boolean && (Boolean) success)) return result;
         result.entity = new Entity(map);
+        result.headers = resp.getHeaders();
         result.success = true;
         return result;
     }
@@ -45,6 +48,8 @@ public class TaskResult {
         log.error("entity invalid, code = {}, body = {}", status, body);
         throw new RuntimeException(message);
     }
+
+    public HttpHeaders getHeaders() { return headers; }
 
     public Entity getEntity() {
         return entity;

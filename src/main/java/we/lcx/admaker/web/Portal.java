@@ -6,10 +6,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import we.lcx.admaker.common.Result;
-import we.lcx.admaker.common.enums.BiddingMode;
-import we.lcx.admaker.entity.web.NewAds;
+import we.lcx.admaker.common.dto.NewAds;
+import we.lcx.admaker.service.AdCreateService;
 import we.lcx.admaker.service.Basic;
-import we.lcx.admaker.service.MaiSui;
 import javax.annotation.Resource;
 
 /**
@@ -21,7 +20,10 @@ public class Portal {
     private Basic basic;
 
     @Resource
-    private MaiSui maiSui;
+    private AdCreateService maiSui;
+
+    @Resource
+    private AdCreateService maiTian;
 
     @GetMapping("/")
     public String index() {
@@ -37,8 +39,8 @@ public class Portal {
     @PostMapping("/j/create")
     @ResponseBody
     public Result create(NewAds ads) {
-        int r = ads.getType() == 1 ? 0 :
-                maiSui.createAd(ads.getFlight(), BiddingMode.of(ads.getFee()), ads.getName(), ads.getBegin(), ads.getEnd(), ads.getAmount());
+        ads.convert();
+        int r = ads.getType() == 1 ? maiTian.createAd(ads) : maiSui.createAd(ads);
         return r == ads.getAmount() ? Result.ok() : Result.fail((ads.getAmount() - r) + "个广告单创建失败");
     }
 }

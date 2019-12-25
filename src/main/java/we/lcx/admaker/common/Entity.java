@@ -126,25 +126,35 @@ public class Entity {
     public Object get(String key) {
         Object obj = nodes.getLast();
         if (obj == null) throw new RuntimeException("Entity:get 当前路径超过边界");
-        if (obj instanceof Map) return ((Map) obj).get(key);
+        if (obj instanceof Map) return get(((Map) obj), key);
         else throw new RuntimeException("Entity:get 当前非map对象");
     }
 
-    public void each(Function<Map, Boolean> f) {
+    public Entity each(Function<Map, Boolean> f) {
         Object obj = nodes.getLast();
-        if (obj instanceof List) { for (Object v : (List) obj) if (v instanceof Map && f.apply((Map) v)) break; }
+        if (obj instanceof List) {
+            for (Object v : (List) obj) {
+                if (v instanceof Map && f.apply((Map) v)) {
+                    nodes.addLast(v);
+                    break;
+                }
+            }
+        }
         else throw new RuntimeException("Entity:each 当前非list对象");
+        return this;
     }
 
     public <T> T to(Class<T> clazz) {
-        Object obj = nodes.getLast();
-        if (clazz.isAnnotationPresent(Level.class)) obj = get((Map) obj, clazz.getAnnotation(Level.class).value());
+        Object obj;
+        if (clazz.isAnnotationPresent(Level.class)) obj = get((Map) nodes.getFirst(), clazz.getAnnotation(Level.class).value());
+        else obj = nodes.getLast();
         return to(obj, clazz);
     }
 
     public <T> List<T> toList(Class<T> clazz) {
-        Object obj = nodes.getLast();
-        if (clazz.isAnnotationPresent(Level.class)) obj = get((Map) obj, clazz.getAnnotation(Level.class).value());
+        Object obj;
+        if (clazz.isAnnotationPresent(Level.class)) obj = get((Map) nodes.getFirst(), clazz.getAnnotation(Level.class).value());
+        else obj = nodes.getLast();
         if (obj instanceof List) {
             List<T> list = new ArrayList<>();
             for (Object v : (List) obj) {
@@ -196,7 +206,7 @@ public class Entity {
                     }
                 } else {
                     Object val = get(map, field.getName());
-                    field.set(obj, val == null ? null : to(val, field.getType()));
+                    field.set(obj, to(val, field.getType()));
                 }
             }
             return obj;

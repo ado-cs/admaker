@@ -14255,7 +14255,7 @@ $.fn.search = function(parameters) {
             var
               searchHTML = module.generateResults(response)
             ;
-            module.verbose('Parsing server response', response);
+            module.verbose('Parsing server responses', response);
             if(response !== undefined) {
               if(searchTerm !== undefined && response[fields.results] !== undefined) {
                 module.addResults(searchHTML);
@@ -14557,7 +14557,7 @@ $.fn.search = function(parameters) {
         },
 
         generateResults: function(response) {
-          module.debug('Generating html from response', response);
+          module.debug('Generating html from responses', response);
           var
             template       = settings.templates[settings.type],
             isProperObject = ($.isPlainObject(response[fields.results]) && !$.isEmptyObject(response[fields.results])),
@@ -14883,7 +14883,7 @@ $.fn.search.settings = {
     beginsWith : '(?:\s|^)'
   },
 
-  // maps api response attributes to internal representation
+  // maps api responses attributes to internal representation
   fields: {
     categories      : 'results',     // array of categories (category view)
     categoryName    : 'name',        // name of category (category view)
@@ -18891,7 +18891,7 @@ $.fn.tab.settings = {
   alwaysRefresh   : false,      // load tab content new every tab click
   cache           : true,       // cache the content requests to pull locally
   loadOnce        : false,      // Whether tab data should only be loaded once when using remote content
-  cacheType       : 'response', // Whether to cache exact response, or to html cache contents after scripts execute
+  cacheType       : 'response', // Whether to cache exact responses, or to html cache contents after scripts execute
   ignoreFirstLoad : false,      // don't load remote content on first load
 
   apiSettings     : false,      // settings for api call
@@ -20182,7 +20182,7 @@ $.api = $.fn.api = function(parameters) {
               return;
             }
             response = sessionStorage.getItem(url);
-            module.debug('Using cached response', url, response);
+            module.debug('Using cached responses', url, response);
             response = module.decode.json(response);
             return response;
           }
@@ -20201,7 +20201,7 @@ $.api = $.fn.api = function(parameters) {
               response = JSON.stringify(response);
             }
             sessionStorage.setItem(url, response);
-            module.verbose('Storing cached response for url', url, response);
+            module.verbose('Storing cached responses for url', url, response);
           }
         },
 
@@ -20527,7 +20527,7 @@ $.api = $.fn.api = function(parameters) {
                 : 0
               ;
               if(translatedResponse) {
-                module.debug('Modified API response in onResponse callback', settings.onResponse, translatedResponse, response);
+                module.debug('Modified API responses in onResponse callback', settings.onResponse, translatedResponse, response);
                 response = translatedResponse;
               }
               if(timeLeft > 0) {
@@ -20570,7 +20570,7 @@ $.api = $.fn.api = function(parameters) {
               module.debug('Successful API Response', response);
               if(settings.cache === 'local' && url) {
                 module.write.cachedResponse(url, response);
-                module.debug('Saving server response locally', module.cache);
+                module.debug('Saving server responses locally', module.cache);
               }
               settings.onSuccess.call(context, response, $module, xhr);
             },
@@ -20593,7 +20593,7 @@ $.api = $.fn.api = function(parameters) {
             },
             fail: function(xhr, status, httpMessage) {
               var
-                // pull response from xhr if available
+                // pull responses from xhr if available
                 response     = module.get.responseFromXHR(xhr),
                 errorMessage = module.get.errorFromRequest(response, status, httpMessage)
               ;
@@ -20665,15 +20665,15 @@ $.api = $.fn.api = function(parameters) {
                 response = responder.call(context, requestSettings);
               }
               else {
-                module.debug('Using settings specified response', responder);
+                module.debug('Using settings specified responses', responder);
                 response = responder;
               }
-              // simulating response
+              // simulating responses
               mockedXHR.resolveWith(context, [ response, textStatus, { responseText: response }]);
             }
             else if( $.isFunction(asyncResponder) ) {
               asyncCallback = function(response) {
-                module.debug('Async callback returned response', response);
+                module.debug('Async callback returned responses', response);
 
                 if(response) {
                   mockedXHR.resolveWith(context, [ response, textStatus, { responseText: response }]);
@@ -20682,7 +20682,7 @@ $.api = $.fn.api = function(parameters) {
                   mockedXHR.rejectWith(context, [{ responseText: response }, status, httpMessage]);
                 }
               };
-              module.debug('Using specified async response callback', asyncResponder);
+              module.debug('Using specified async responses callback', asyncResponder);
               asyncResponder.call(context, requestSettings, asyncCallback);
             }
             return mockedXHR;
@@ -21125,7 +21125,7 @@ $.api.settings = {
   data              : {},
   dataType          : 'json',
 
-  // mock response
+  // mock responses
   mockResponse      : false,
   mockResponseAsync : false,
 
@@ -21139,9 +21139,9 @@ $.api.settings = {
   onRequest   : function(promise, xhr) {},
 
   // after request
-  onResponse  : false, // function(response) { },
+  onResponse  : false, // function(responses) { },
 
-  // response was successful, if JSON passed validation
+  // responses was successful, if JSON passed validation
   onSuccess   : function(response, $module) {},
 
   // request finished without aborting

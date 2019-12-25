@@ -4,7 +4,7 @@ package we.lcx.admaker.common.enums;
  * Created by LinChenxiao on 2019/12/13 10:13
  **/
 public enum ShowType {
-    PIC(1, "图片"),
+    PICTURE(1, "图片"),
     VIDEO(2, "视频"),
     TEXT(3, "文字"),
     AUDIO(4, "音频");
@@ -17,8 +17,10 @@ public enum ShowType {
     }
     public static ShowType of(String code) {
         if (code == null) return null;
+        if ("PIC".equalsIgnoreCase(code)) return PICTURE;
+        if ("VEDIO".equalsIgnoreCase(code)) return VIDEO;
         for (ShowType type : values()) {
-            if (code.equals(String.valueOf(type.code)) || code.equals(type.name())) return type;
+            if (code.equals(String.valueOf(type.code)) || code.equalsIgnoreCase(type.name())) return type;
         }
         return null;
     }

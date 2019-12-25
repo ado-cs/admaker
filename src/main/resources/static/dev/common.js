@@ -54,15 +54,22 @@ function fillOptions(name, options) {
     p.val(options[0].constructor === String ? '1' : options[0].value.toString())
 }
 
-function setDisabled(name, flag) {
-    let p = $(format('input[name="{}"]', name)).parent();
-    if (flag) {
-        p.addClass('disabled');
-        p.prev().attr('style', 'color: rgba(34, 36, 38, 0.15)')
+function setDisabled(names, flag) {
+    if (names.constructor === String) {
+        names = [names];
     }
-    else {
-        p.removeClass('disabled');
-        p.prev().removeAttr('style')
+    for (let name of names) {
+        let p = $(format('input[name="{}"]', name));
+        if (!p) continue;
+        p = p.parent();
+        if (flag) {
+            p.addClass('disabled');
+            p.prev().attr('style', 'color: rgba(34, 36, 38, 0.15)')
+        }
+        else {
+            p.removeClass('disabled');
+            p.prev().removeAttr('style')
+        }
     }
 }
 
@@ -70,7 +77,9 @@ function composeData() {
     let data = {};
     $('input').each(function () {
         let name = $(this).attr('name');
-        if (name) data[name] = $(this).val()
+        if (name) {
+            data[name] = $(this).val()
+        }
     });
     data.flight = divide(data.flight);
     if (!data.flight) { msgBox('提示', '请选择广告位'); return false }
@@ -81,6 +90,10 @@ function composeData() {
     if (!data.deal) data.deal = 1;
     if (!data.fee) data.fee = parseInt(data.type) === 1 && parseInt(data.deal) === 2 ? 2 : 1;
     if (!data.flow) data.flow = 1;
+    if (!data.category) data.category = 1;
+    if (!data.showNumber || isNaN(parseInt(data.showNumber)) || parseInt(data.showNumber) <= 0) data.showNumber = 10000;
+    if (!data.showRadio || isNaN(parseInt(data.showRadio)) || parseInt(data.showRadio) <= 0 || parseInt(data.showRadio) > 100) data.showRadio = 0.4;
+    else data.showRadio /= 100;
     let date = new Date();
     if (!data.name) data.name = '压测' + parseDate(date);
     if (!data.begin) data.begin = parseDate(date, '-');
@@ -93,58 +106,119 @@ function composeData() {
     return data
 }
 
+function selectionChanged(self) {
+    const names = {'flight': 'type', 'type': 'fee', 'deal': 'fee'};
+    let name = self.attr('name');
+    let sel = self.val();
+    let next = null;
+    let val = null;
+    if (names.hasOwnProperty(name)) {
+        next = $(format('input[name="{}"]', names[name]));
+        val = next.val()
+    }
+    if (name === 'flight') {
+        let v = divide(sel, true);
+        let opt = [];
+        if (v === '1' || v === '3') opt.push({name: '合约', value: 1});
+        if (v === '2' || v === '3') opt.push({name: '竞价', value: 2});
+        fillOptions('type', opt)
+    }
+    else if (name === 'type') {
+        if (val === '1') val = '';
+        if (sel === '1') {
+            setDisabled('deal', false);
+            fillOptions('fee', ['CPT', 'CPM'])
+        }
+        else {
+            setDisabled('deal', true);
+            fillOptions('fee', ['CPC', 'CPM'])
+        }
+    }
+    else if (name === 'deal') {
+        if (sel === '1') {
+            fillOptions('fee', ['CPT', 'CPM'])
+        }
+        else if (sel === '2') {
+            fillOptions('fee', ['CPT'])
+        }
+        else  {
+            fillOptions('fee', [{name: 'CPM', value: 2}])
+        }
+    }
+    else if (name === 'fee') {
+        if ($('input[name="type"]').val() === '1') {
+            setDisabled('flow', sel !== '1');
+            setDisabled(['category', 'showNumber', 'showRadio'], false);
+            let p = $('#show .ui.input input');
+            if (sel === '1') {
+                $('#show label').html('每日轮播比例');
+                $('#show .ui.input .ui.label').html('%');
+                p.val('');
+                p.attr('name', 'showRadio');
+                p.attr('placeholder', '轮播比例')
+            }
+            else {
+                $('#show label').html('每日展示数量');
+                $('#show .ui.input .ui.label').html('CPM');
+                p.val('');
+                p.attr('name', 'showNumber');
+                p.attr('placeholder', '展示数量')
+            }
+        }
+        else {
+            setDisabled(['flow', 'category', 'showNumber', 'showRadio'], true);
+        }
+
+    }
+
+    if (next != null) {
+        if (val !== next.val()) selectionChanged(next)
+    }
+}
+
 function initEvents() {
     $.fn.api.settings.api = {
         'create': '/j/create',
         'query' : '/j/flight/{query}'
     };
     $('.ui.selection.dropdown').dropdown();
-    $('input[name="flight"]').bind('change', function () {
-        let v = divide($(this).val(), true);
-        let opt = [];
-        if (v === '1' || v === '3') opt.push({name: '合约', value: 1});
-        if (v === '2' || v === '3') opt.push({name: '竞价', value: 2});
-        fillOptions('type', opt)
-    });
-    $('input[name="type"]').bind('change', function () {
-        if ($(this).val() === '1') {
-            setDisabled('deal', false);
-            setDisabled('flow', false);
-            fillOptions('fee', ['CPT', 'CPM'])
+    for (let t of ['flight', 'type', 'deal', 'fee']) {
+        $(format('input[name="{}"]', t)).bind('change', function () {
+            selectionChanged($(this))
+        });
+    }
+    $('#settings').bind('click', function () {
+        let p = $('#more');
+        if (p.hasClass('in')) return;
+        let s = $(this).children('.icon');
+        if (s.hasClass('up')) {
+            s.removeClass('up');
+            s.addClass('down')
         }
         else {
-            setDisabled('deal', true);
-            setDisabled('flow', true);
-            fillOptions('fee', ['CPC', 'CPM'])
+            s.removeClass('down');
+            s.addClass('up')
         }
-    });
-    $('input[name="deal"]').bind('change', function () {
-        let v = $(this).val();
-        if (v === '1') {
-            setDisabled('flow', false);
-            fillOptions('fee', ['CPT', 'CPM'])
-        }
-        else if (v === '2') {
-            setDisabled('flow', true);
-            fillOptions('fee', [{name: 'CPM', value: 2}])
-        }
-        else  {
-            setDisabled('flow', false);
-            fillOptions('fee', ['CPT'])
-        }
-    });
-    $('input[name="fee"]').bind('change', function () {
-        setDisabled('flow', !($(this).val() === '1' && $('input[name="type"]').val() === '1'));
-    });
-    $('#settings').bind('click', function () {
-        $('#more').transition('slide down')
+        p.transition('slide down')
     });
     $('.ui.search.dropdown').dropdown({
+        minCharacters: 2,
+        saveRemoteData: false,
         apiSettings: {
             action: 'query',
             beforeSend: function (settings) {
                 if (settings.urlData.query.length < 2) return false;
-                return settings
+                let n = 0;
+                for (let i = 0; i < settings.urlData.query.length; i++) {
+                    let j = settings.urlData.query.charCodeAt(i);
+                    if (j < 128 && j !== 40 && j !== 41 && (j > 57 || j < 48)) n++;
+                }
+                return n > 1 ? false : settings
+            },
+            onResponse: function (response) {
+                if (!response || !response.success || !response.results || response.results.length === 0)
+                    fillOptions('flight', []);
+                return response;
             }
         }
     });
@@ -155,7 +229,6 @@ function initEvents() {
             let data = composeData();
             if (!data) return false;
             settings.data = data;
-            console.info(settings);
             $('#create').addClass('loading');
             return settings;
         },

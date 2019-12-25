@@ -1,4 +1,4 @@
-package we.lcx.admaker.entity.ad;
+package we.lcx.admaker.common.response;
 
 import lombok.Data;
 import we.lcx.admaker.common.annotation.Level;
@@ -14,16 +14,10 @@ public class AdPackage {
     @Level("uid")
     private Integer id;
     private String name;
-    @Level("templateList uid")
-    private String refId;
     @Level("status code")
     private Integer status;
-    @Level("templateList mainShowType code")
-    private ShowType mainType;
-    @Level("templateList showType")
-    private String showType;
     @Level(value = "flightList", type = AdFlight.class)
     private List<AdFlight> flights;
-    @Level(value = "templateList locationTypeJsonList", type = AdUnit.class)
-    private List<AdUnit> units;
+    @Level(value = "templateList", type = AdTemplate.class)
+    private List<AdTemplate> templates;
 }

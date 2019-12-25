@@ -1,4 +1,4 @@
-package we.lcx.admaker.entity.bo;
+package we.lcx.admaker.common.dto;
 
 import lombok.Data;
 import we.lcx.admaker.common.enums.ShowType;
@@ -9,6 +9,7 @@ import we.lcx.admaker.common.enums.ShowType;
 @Data
 public class Unit {
     private String id;
+    private String name;
     private ShowType type;
     private String orderId;
     private String limit;

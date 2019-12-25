@@ -1,4 +1,4 @@
-package we.lcx.admaker.entity.bo;
+package we.lcx.admaker.common.dto;
 
 import lombok.Data;
 import we.lcx.admaker.common.enums.ShowType;
