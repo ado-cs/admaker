@@ -238,6 +238,6 @@ public class Entity {
 
     @Override
     public String toString() {
-        return JSON.toJSONString(nodes.getLast());
+        return JSON.toJSONString(nodes.getFirst());
     }
 }

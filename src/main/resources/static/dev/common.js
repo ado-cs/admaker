@@ -102,7 +102,7 @@ function composeData() {
         date.setDate(date.getDate() + 7);
         data.end = parseDate(date, '-');
     }
-    if (compareDate(data.begin, data.end) >= 0) { msgBox('提示', '结束时间必须在开始时间之后'); return false }
+    if (compareDate(data.begin, data.end) > 0) { msgBox('提示', '结束时间不能开始时间之前'); return false }
     return data
 }
 

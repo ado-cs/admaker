@@ -1,5 +1,6 @@
 package we.lcx.admaker.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -19,12 +20,12 @@ import we.lcx.admaker.service.AdCreateService;
 import we.lcx.admaker.service.Basic;
 import we.lcx.admaker.utils.HttpExecutor;
 import we.lcx.admaker.utils.WordsTool;
-
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by LinChenxiao on 2019/12/23 17:26
@@ -36,44 +37,44 @@ public class MaiTian implements AdCreateService {
     @Resource
     private Basic basic;
 
-    @Value("${ad.login.url}")
-    private String LOGIN_URL;
+    @Value("${ad.common.account}")
+    private String ACCOUNT;
 
-    @Value("${ad.login.account}")
-    private String LOGIN_ACCOUNT;
-
-    @Value("${ad.maitian.url}")
+    @Value("${ad.url.maitian}")
     private String URL;
+
+    @Value("${ad.common.dspId}")
+    private String DSP_ID;
 
     //以下字段需在麦田提前建立对应条目
 
     @Value("${ad.maitian.resourceId}")
-    private String RESOURCE_ID; //资源id
+    private Integer RESOURCE_ID; //资源id
 
     @Value("${ad.maitian.customerId}")
-    private String CUSTOMER_ID;
+    private Long CUSTOMER_ID; //客户id
 
     @Value("${ad.maitian.mediaId}")
-    private String MEDIA_ID;
+    private Integer MEDIA_ID; //资源创建者id
 
     @Value("${ad.maitian.contractId}")
-    private String CONTRACT_ID;
+    private Integer CONTRACT_ID; //合同id
 
     @Value("${ad.maitian.firstIndustry}")
-    private String FIRST_INDUSTRY;
+    private Integer FIRST_INDUSTRY; //第一行业id
 
     @Value("${ad.maitian.secondIndustry}")
-    private String SECOND_INDUSTRY;
+    private Integer SECOND_INDUSTRY; //第二行业id
 
     @Value("${ad.maitian.brand}")
-    private String BRAND;
+    private Long BRAND; //客户品牌id
 
     private String cookie;
 
     @PostConstruct
     private void login() {
         TaskResult result = HttpExecutor.doRequest(
-                Task.get(LOGIN_URL + LOGIN_ACCOUNT));
+                Task.get(URL + "mock?user=" + ACCOUNT));
         result.valid("麦田登录失败");
         List<String> list = result.getHeaders().get(HttpHeaders.SET_COOKIE);
         if (!CollectionUtils.isEmpty(list)) cookie = list.get(0);
@@ -107,11 +108,11 @@ public class MaiTian implements AdCreateService {
                         .put("resourceUid", RESOURCE_ID)
                         .put("resourceItemUid", itemId)
                         .put("revenueName", Settings.PREFIX_NAME + "_" + WordsTool.getNowDate() + WordsTool.randomSuffix(4))
-                        .put("year", date.getYear())
+                        .put("year", date.getYear() + 1900)
                         .put("month", "Q" + (date.getMonth() / 3 + 1))
                         .cd("durationVO")
-                        .put("begin", date.getTime())
-                        .put("end", WordsTool.parseTime(end) + DAY - 1)));
+                        .put("beginTime", date.getTime())
+                        .put("endTime", WordsTool.parseTime(end) + DAY - 1)));
         result.valid("创建资源条目失败");
         return (int) result.getEntity().get("result");
     }
@@ -144,7 +145,7 @@ public class MaiTian implements AdCreateService {
         TaskResult result = HttpExecutor.doRequest(
                 Task.post(URL + URLs.MAITIAN_RESERVE)
                         .cookie(cookie).param(entity));
-        result.valid("创建资源条目失败");
+        result.valid("资源预定失败，请检查当日是否排期已满");
         return (int) result.getEntity().get("result");
     }
 
@@ -154,8 +155,8 @@ public class MaiTian implements AdCreateService {
                         .cookie(cookie).param(Entity.of(Params.MAITIAN_DEAL)
                         .put("name", Settings.PREFIX_NAME + "_" + WordsTool.getNowDate() + WordsTool.randomSuffix(4))
                         .put("scheduleTrafficType", deal.name())
-                        .put("begin", WordsTool.parseTime(begin))
-                        .put("end", WordsTool.parseTime(end) + DAY - 1000)
+                        .put("beginTime", WordsTool.parseTime(begin))
+                        .put("endTime", WordsTool.parseTime(end) + DAY - 1000)
                         .put("contractUid", CONTRACT_ID)
                         .put("firstIndustryUid", FIRST_INDUSTRY)
                         .put("secondIndustryUid", SECOND_INDUSTRY)
@@ -174,7 +175,7 @@ public class MaiTian implements AdCreateService {
         result.valid("获取预定信息失败");
         Object obj = result.getEntity().get("result reserveDatingVOs");
         Entity entity = Entity.of(Params.MAITIAN_DEAL_ITEM)
-                .put("name", WordsTool.randomSuffix(6))
+                .put("name", "item" + WordsTool.randomSuffix(6))
                 .put("scheduleUid", dealId)
                 .put("reserveItemUid", reservationId)
                 .put("positionUids", WordsTool.toList(packageId))
@@ -185,6 +186,7 @@ public class MaiTian implements AdCreateService {
                 .put("refundAmountRatio", deal == DealMode.PD ? 1 : 0)
                 .put("resourceRevenueUid", revenueId)
                 .put("deliveryPeriods", obj)
+                .put("dspUid", DSP_ID)
                 .cd("deliveryPeriods").each(v -> {
                     v.put("serveBeginTime", v.get("beginTime"));
                     v.put("serveEndTime", v.get("endTime"));
@@ -204,29 +206,31 @@ public class MaiTian implements AdCreateService {
                 .param(Entity.of(Params.MAITIAN_TEMPLATE).put("uid", var0.getPackageId())));
         result.valid("获取版位模板信息失败");
         Object template = result.getEntity().get("result");
-        Object mediaUnit = result.getEntity().cd("multiMediaUnits[0]").getCurrent();
-
+        List mediaUnits = (List) result.getEntity().cd("result/multiMediaUnits").getCurrent();
         Entity creative = Entity.of(Params.MAITIAN_CREATIVE)
                 .put("templateRefId", var0.getRefId())
                 .put("template", template);
         for (Unit unit : var0.getUnits()) {
             if (unit.getType() == ShowType.TEXT) {
-                creative.put(unit.getName(), unit.getName().equals("mediaSponsorId") ? MEDIA_ID : WordsTool.repeat(unit.getLimit()));
+                creative.put(unit.getName(), unit.getName().equals("mediaSponsorId") ? String.valueOf(MEDIA_ID) : WordsTool.repeat(unit.getLimit()));
             }
         }
         creative.cd("multiMediaList");
-        for (Unit unit : var0.getUnits()) {
+        int idx = 0;
+        for (int i = 0; i < mediaUnits.size(); i++) {
+            Unit unit = var0.getUnits().get(idx++);
             if (unit.getType() == ShowType.PICTURE) {
                 creative.put("multiMediaType", 1)
                         .put("materialMd5", Settings.DEFAULT_MD5)
                         .put("materialSize", unit.getLimit())
                         .put("materialUrl", Settings.DEFAULT_URL)
-                        .put("sortIndex", 0)
+                        .put("sortIndex", ((Map) mediaUnits.get(i)).get("sortIndex"))
                         .put("backendMaterialUrl", "")
                         .put("resourceId", "")
-                        .put("template", mediaUnit)
+                        .put("template", mediaUnits.get(i))
                         .add();
             }
+            else i--;
         }
         List list = WordsTool.toList(creative.getHead());
         int itemId = createItem(String.valueOf(var0.getPackageId()), var0.getPackageName(), ads.getDealMode(), ads.getContractMode(), ads.getFlowEnum());

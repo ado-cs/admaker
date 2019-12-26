@@ -18,7 +18,6 @@ import we.lcx.admaker.service.AdCreateService;
 import we.lcx.admaker.service.Basic;
 import we.lcx.admaker.utils.HttpExecutor;
 import we.lcx.admaker.utils.WordsTool;
-
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +31,7 @@ public class MaiSui implements AdCreateService {
     @Resource
     private Basic basic;
 
-    @Value("${ad.maisui.url}")
+    @Value("${ad.url.maisui}")
     private String URL;
 
     private String newPlan() {

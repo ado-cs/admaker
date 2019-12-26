@@ -16,7 +16,6 @@ import we.lcx.admaker.common.consts.URLs;
 import we.lcx.admaker.common.enums.ShowType;
 import we.lcx.admaker.utils.HttpExecutor;
 import we.lcx.admaker.utils.WordsTool;
-
 import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,11 +26,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 @Service
 public class Basic {
-    @Value("${ad.maisui.url}")
+    @Value("${ad.url.maisui}")
     private String URL_MAISUI;
 
-    @Value("${ad.yunying.url}")
+    @Value("${ad.url.maitian}")
+    private String URL_MAITIAN;
+
+    @Value("${ad.url.yunying}")
     private String URL_YUNYING;
+
+    @Value("${ad.common.dspId}")
+    private Integer DSP_ID;
 
     private Map<Integer, Ad> flights = new HashMap<>();
     private volatile boolean processing;
@@ -78,7 +83,7 @@ public class Basic {
                     var9.setOrderId(var8.getOrderId());
                     var9.setType(var8.getType());
                     if (var8.getType() == ShowType.TEXT)
-                        var9.setLimit(String.valueOf(Math.floor((var8.getLength() + var8.getLowerLength()) / 2.0)));
+                        var9.setLimit(String.valueOf((int) Math.floor((var8.getLength() + var8.getLowerLength()) / 2.0)));
                     else if (var8.getType() == ShowType.PICTURE) var9.setLimit(var8.getSize());
                     else continue v;
                     var7.add(var9);
@@ -87,8 +92,7 @@ public class Basic {
                 var0.put(var5.getId(), var6);
             }
             flights = var0;
-        }
-        finally {
+        } finally {
             processing = false;
         }
     }
@@ -140,9 +144,13 @@ public class Basic {
         return var0;
     }
 
-    public void checkFlight(int id) {
-        //todo 检查竞价时广告位在运营平台内部dsp的开启状态
-
+    public void checkFlight(int flightId) {
+        TaskResult result = HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_FLIGHT).param(Entity.of(Params.YUNYING_FLIGHT)
+                .put("adFlightId", String.valueOf(flightId)).put("dspId", DSP_ID)));
+        result.valid("查询广告位开关状态失败");
+        HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_STATUS).param(Entity.of(Params.YUNYING_STATUS)
+                .put("id", result.getEntity().get("result list id")).put("adFlightId", flightId).put("dspId", DSP_ID)))
+                .valid("运营平台开启广告位失败");
     }
 
     public int approveAds(List<TaskResult> list) {
@@ -156,7 +164,7 @@ public class Basic {
                 }
                 continue;
             }
-            var0.add(Task.post(URL_YUNYING + URLs.COMMON_APPROVE)
+            var0.add(Task.post(URL_MAITIAN + URLs.COMMON_APPROVE)
                     .param(Entity.of(Params.COMMON_APPROVE)
                             .put("creativeId", "MAISUI_" + (Integer.valueOf(String.valueOf(var2.getEntity().get("result"))) + 9500))));
         }

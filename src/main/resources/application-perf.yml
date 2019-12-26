@@ -1,13 +1,12 @@
 ad:
-  login:
-    url: http://10.206.60.36:16006/mock?user=
+  common:
     account: linchenxiao@corp.netease.com
-  yunying:
-    url: http://10.200.132.146:10010/
-  maisui:
-    url: http://10.200.132.146:10020/
+    dspId: 10101
+  url:
+    yunying: http://10.200.132.146:10010/
+    maisui: http://10.200.132.146:10020/
+    maitian: http://10.200.132.146:60001/
   maitian:
-    url: http://10.200.132.146:60001/
     resourceId: 1068001
     customerId: 213290621
     mediaId: 5001
