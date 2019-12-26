@@ -34,41 +34,35 @@ public class MaiSui implements AdCreateService {
     @Value("${ad.url.maisui}")
     private String URL;
 
-    private String newPlan() {
-        TaskResult result = HttpExecutor.doRequest(
-                Task.post(URL + URLs.MAISUI_PLAN)
-                        .param(Entity.of(Params.MAISUI_PLAN).put("adPlanName", Settings.PREFIX_NAME + WordsTool.randomSuffix(6))));
-        result.valid("创建广告计划失败");
-        return String.valueOf(result.getEntity().get("result adPlanId"));
-    }
+    @Value("${ad.maisui.adPlanId}")
+    private String PLAN_ID;
 
     private String getPrice(String planId, Integer uid, BiddingMode mode) {
-        TaskResult result = HttpExecutor.doRequest(
-                Task.post(URL + URLs.MAISUI_PRICE)
-                        .param(Entity.of(Params.MAISUI_PRICE)
-                                .put("adPlanId", planId).put("campaignPackageUid", uid).put("billingMode", mode.getValue())));
-        result.valid("获取广告报价失败");
-        return String.valueOf(result.getEntity().get("result campaignPackagePrice"));
+//        TaskResult result = HttpExecutor.doRequest(
+//                Task.post(URL + URLs.MAISUI_PRICE)
+//                        .param(Entity.of(Params.MAISUI_PRICE)
+//                                .put("adPlanId", planId).put("campaignPackageUid", uid).put("billingMode", mode.getValue())));
+//        result.valid("获取广告报价失败");
+//        return String.valueOf(result.getEntity().get("result campaignPackagePrice"));
+        return "";
     }
-
     @Override
     public int createAd(NewAds ads) {
         basic.checkFlight(ads.getFlight());
-        Ad var0 = basic.getAdFlight(ads.getFlight());
-        String var1 = newPlan();
-        String var2 = getPrice(var1, var0.getPackageId(), ads.getBiddingMode());
-
-        var2 = String.valueOf((int) Math.ceil(Double.parseDouble(var2) / 10));
+        Ad var0 = basic.getAdFlight(ads.getFlight(), ads.getFlightName());
+//        String var2 = getPrice(PLAN_ID, var0.getPackageId(), ads.getBiddingMode());
+//
+//        var2 = String.valueOf((int) Math.ceil(Double.parseDouble(var2) / 10));
         List<Task> var3 = new ArrayList<>();
         for (int var4 = 0; var4 < ads.getAmount(); var4++) {
             Entity var5 = Entity.of(Params.MAISUI_CREATE);
             var3.add(Task.post(URL + URLs.MAISUI_CREATE)
                     .param(var5));
-            var5.put("adPlanId", var1)
+            var5.put("adPlanId", PLAN_ID)
                     .put("adformName", ads.getName() + "_" + var4 + WordsTool.randomSuffix(4))
                     .put("campaignPackageId", var0.getPackageId())
-                    .put("bidAmountMin", var2)
-                    .put("bidAmountMax", var2)
+                    .put("bidAmountMin", "100")
+                    .put("bidAmountMax", "100")
                     .put("billingMode", ads.getBiddingMode().getValue())
                     .put("beginDate", WordsTool.parseDateString(ads.getBegin()))
                     .put("endDate", WordsTool.parseDateString(ads.getEnd()))

@@ -20,6 +20,7 @@ import we.lcx.admaker.service.AdCreateService;
 import we.lcx.admaker.service.Basic;
 import we.lcx.admaker.utils.HttpExecutor;
 import we.lcx.admaker.utils.WordsTool;
+
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -57,17 +58,8 @@ public class MaiTian implements AdCreateService {
     @Value("${ad.maitian.mediaId}")
     private Integer MEDIA_ID; //资源创建者id
 
-    @Value("${ad.maitian.contractId}")
-    private Integer CONTRACT_ID; //合同id
-
-    @Value("${ad.maitian.firstIndustry}")
-    private Integer FIRST_INDUSTRY; //第一行业id
-
-    @Value("${ad.maitian.secondIndustry}")
-    private Integer SECOND_INDUSTRY; //第二行业id
-
-    @Value("${ad.maitian.brand}")
-    private Long BRAND; //客户品牌id
+    @Value("${ad.maitian.mediaId}")
+    private Integer DEAL_ID; //排期第一个id
 
     private String cookie;
 
@@ -81,16 +73,16 @@ public class MaiTian implements AdCreateService {
         else log.error("麦田cookie无效");
     }
 
-    private int createItem(String packageId, String packageName, DealMode deal, ContractMode fee, FlowEnum flow) {
+    private int createItem(String flightName, String packageId, String packageName, DealMode deal, ContractMode fee, FlowEnum flow) {
         TaskResult result = HttpExecutor.doRequest(
                 Task.post(URL + URLs.MAITIAN_ITEM)
                         .cookie(cookie).param(Entity.of(Params.MAITIAN_ITEM)
                         .put("resourceUid", RESOURCE_ID)
                         .put("mediaUid", MEDIA_ID)
-                        .put("itemName", Settings.PREFIX_NAME + "_" + WordsTool.getNowDate() + WordsTool.randomSuffix(4))
+                        .put("itemName", flightName + "_" + deal.name() + "_" + fee.name() + WordsTool.randomSuffix(4))
                         .put("resourceTrafficType", deal.name())
                         .put("billingMode", "BILLING_MODE_" + fee.getValue())
-                        .put("resourceTrafficRatio", flow.getValue())
+                        .put("resourceTrafficRatio", fee == ContractMode.CPM ? "ZERO" : flow.getValue())
                         .put("trafficSplitTypes", WordsTool.toList(ContractMode.CPT.getTraffic(), ContractMode.CPM.getTraffic()))
                         .put("positionIdList", WordsTool.toList(packageId))
                         .cd("positionList[0]")
@@ -107,7 +99,7 @@ public class MaiTian implements AdCreateService {
                         .cookie(cookie).param(Entity.of(Params.MAITIAN_REVENUE)
                         .put("resourceUid", RESOURCE_ID)
                         .put("resourceItemUid", itemId)
-                        .put("revenueName", Settings.PREFIX_NAME + "_" + WordsTool.getNowDate() + WordsTool.randomSuffix(4))
+                        .put("revenueName", itemId + WordsTool.randomSuffix(4))
                         .put("year", date.getYear() + 1900)
                         .put("month", "Q" + (date.getMonth() / 3 + 1))
                         .cd("durationVO")
@@ -130,9 +122,6 @@ public class MaiTian implements AdCreateService {
                 .put("value", deal.getValue())
                 .cd("/resourceItem")
                 .put("uid", itemId)
-                .cd("trafficType")
-                .put("code", String.valueOf(deal.getCode()))
-                .put("value", deal.getValue())
                 .cd("/mergeDurations");
         long m = WordsTool.parseTime(begin);
         long n = WordsTool.parseTime(end);
@@ -150,24 +139,37 @@ public class MaiTian implements AdCreateService {
     }
 
     private int createDeal(DealMode deal, String begin, String end, CategoryEnum category) {
-        TaskResult result = HttpExecutor.doRequest(
-                Task.post(URL + URLs.MAITIAN_DEAL)
-                        .cookie(cookie).param(Entity.of(Params.MAITIAN_DEAL)
-                        .put("name", Settings.PREFIX_NAME + "_" + WordsTool.getNowDate() + WordsTool.randomSuffix(4))
-                        .put("scheduleTrafficType", deal.name())
-                        .put("beginTime", WordsTool.parseTime(begin))
-                        .put("endTime", WordsTool.parseTime(end) + DAY - 1000)
-                        .put("contractUid", CONTRACT_ID)
-                        .put("firstIndustryUid", FIRST_INDUSTRY)
-                        .put("secondIndustryUid", SECOND_INDUSTRY)
-                        .put("brandUid", BRAND)
-                        .put("productName", WordsTool.randomSuffix(6))
-                        .put("scheduleCategoryCode", String.valueOf(category.getCode()))));
-        result.valid("创建排期失败");
-        return (int) result.getEntity().get("result uid");
+//        contractId: 152512
+//        firstIndustry: 3
+//        secondIndustry: 10
+//        brand: 2153992469
+        /**
+         TaskResult result = HttpExecutor.doRequest(
+         Task.post(URL + URLs.MAITIAN_DEAL)
+         .cookie(cookie).param(Entity.of(Params.MAITIAN_DEAL)
+         .put("name", deal.name() + category.getCode() + WordsTool.randomSuffix(4))
+         .put("scheduleTrafficType", deal.name())
+         .put("beginTime", WordsTool.parseTime(begin))
+         .put("endTime", WordsTool.parseTime(end) + DAY - 1000)
+         .put("contractUid", CONTRACT_ID)
+         .put("firstIndustryUid", FIRST_INDUSTRY)
+         .put("secondIndustryUid", SECOND_INDUSTRY)
+         .put("brandUid", BRAND)
+         .put("productName", WordsTool.randomSuffix(6))
+         .put("scheduleCategoryCode", String.valueOf(category.getCode()))));
+         result.valid("创建排期失败");
+         return (int) result.getEntity().get("result uid");
+         **/
+        return 0;
     }
 
-    private int createDealItem(String reservationId, int dealId, String packageId, int revenueId,
+    private int getDealId(DealMode deal, CategoryEnum category) {
+        if (deal == DealMode.PDB) return DEAL_ID + category.getCode() - 1;
+        else if (deal == DealMode.PD) return DEAL_ID + category.getCode() + 1;
+        else return DEAL_ID + category.getCode() + 3;
+    }
+
+    private int createDealItem(String flightName, String reservationId, int dealId, String packageId, int revenueId,
                                String showAmount, double showRadio, DealMode deal, ContractMode fee) {
         TaskResult result = HttpExecutor.doRequest(
                 Task.post(URL + URLs.MAITIAN_QUERY)
@@ -175,7 +177,7 @@ public class MaiTian implements AdCreateService {
         result.valid("获取预定信息失败");
         Object obj = result.getEntity().get("result reserveDatingVOs");
         Entity entity = Entity.of(Params.MAITIAN_DEAL_ITEM)
-                .put("name", "item" + WordsTool.randomSuffix(6))
+                .put("name", flightName + WordsTool.randomSuffix(6))
                 .put("scheduleUid", dealId)
                 .put("reserveItemUid", reservationId)
                 .put("positionUids", WordsTool.toList(packageId))
@@ -202,7 +204,7 @@ public class MaiTian implements AdCreateService {
 
     @Override
     public int createAd(NewAds ads) {
-        Ad var0 = basic.getAdFlight(ads.getFlight());
+        Ad var0 = basic.getAdFlight(ads.getFlight(), ads.getFlightName());
         TaskResult result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_TEMPLATE).cookie(cookie)
                 .param(Entity.of(Params.MAITIAN_TEMPLATE).put("uid", var0.getPackageId())));
         result.valid("获取版位模板信息失败");
@@ -230,19 +232,17 @@ public class MaiTian implements AdCreateService {
                         .put("resourceId", "")
                         .put("template", mediaUnits.get(i))
                         .add();
-            }
-            else i--;
+            } else i--;
         }
         List list = WordsTool.toList(creative.getHead());
-        int itemId = createItem(String.valueOf(var0.getPackageId()), var0.getPackageName(), ads.getDealMode(), ads.getContractMode(), ads.getFlowEnum());
+        int itemId = createItem(var0.getFlightName(), String.valueOf(var0.getPackageId()), var0.getPackageName(), ads.getDealMode(), ads.getContractMode(), ads.getFlowEnum());
         int revenueId = createRevenue(itemId, ads.getBegin(), ads.getEnd());
-        int reservationId = createReservation(itemId, revenueId, ads.getDealMode(), ads.getContractMode(), ads.getBegin(), ads.getEnd());
-        int dealId = createDeal(ads.getDealMode(), ads.getBegin(), ads.getEnd(), ads.getCategoryEnum());
-        int dealItemId = createDealItem(String.valueOf(reservationId), dealId, String.valueOf(var0.getPackageId()), revenueId, String.valueOf(ads.getShowNumber()),
-                ads.getShowRadio(), ads.getDealMode(), ads.getContractMode());
-
+        int dealId = getDealId(ads.getDealMode(), ads.getCategoryEnum());
         List<Task> tasks = new ArrayList<>();
         for (int i = 0; i < ads.getAmount(); i++) {
+            int reservationId = createReservation(itemId, revenueId, ads.getDealMode(), ads.getContractMode(), ads.getBegin(), ads.getEnd());
+            int dealItemId = createDealItem(var0.getFlightName(), String.valueOf(reservationId), dealId, String.valueOf(var0.getPackageId()),
+                    revenueId, String.valueOf(ads.getShowNumber()), ads.getShowRadio(), ads.getDealMode(), ads.getContractMode());
             Entity entity = Entity.of(Params.MAITIAN_CREATE);
             entity.put("name", ads.getName() + "_" + i + WordsTool.randomSuffix(4))
                     .put("execPeriods", WordsTool.toList(WordsTool.parseTime(ads.getBegin()), WordsTool.parseTime(ads.getEnd()) + DAY - 1))

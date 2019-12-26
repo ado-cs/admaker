@@ -115,7 +115,7 @@ public class Basic {
         return var0;
     }
 
-    public Ad getAdFlight(Integer id) {
+    public Ad getAdFlight(Integer id, String name) {
         Ad var0 = flights.get(id);
         if (var0 != null) return var0;
         TaskResult var1 = HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_QUERY)
@@ -134,7 +134,7 @@ public class Basic {
         if (var3 == -1) throw new RuntimeException("不支持该广告位的模板类型");
         HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_CREATE)
                 .param(Entity.of(Params.YUNYING_CREATE)
-                        .put("name", Settings.PREFIX_NAME + "_" + id + WordsTool.randomSuffix(4))
+                        .put("name", name + WordsTool.randomSuffix(4))
                         .put("flightUidList", WordsTool.toList(id))
                         .put("templateUidList", WordsTool.toList(var3)))).valid("创建广告版位失败");
         var3 = 3;

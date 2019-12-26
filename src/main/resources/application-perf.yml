@@ -6,11 +6,10 @@ ad:
     yunying: http://10.200.132.146:10010/
     maisui: http://10.200.132.146:10020/
     maitian: http://10.200.132.146:60001/
+  maisui:
+    adPlanId: 443817
   maitian:
     resourceId: 1068001
     customerId: 213290621
     mediaId: 5001
-    contractId: 152512
-    firstIndustry: 3
-    secondIndustry: 10
-    brand: 2153992469
+    dealId: 354752
