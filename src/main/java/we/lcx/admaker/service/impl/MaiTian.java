@@ -187,6 +187,7 @@ public class MaiTian implements AdCreateService {
                 .put("resourceRevenueUid", revenueId)
                 .put("deliveryPeriods", obj)
                 .put("dspUid", DSP_ID)
+                .put("costType", deal == DealMode.PD ? "OFFLINE_SETTLE" : "FREE_TEST")
                 .cd("deliveryPeriods").each(v -> {
                     v.put("serveBeginTime", v.get("beginTime"));
                     v.put("serveEndTime", v.get("endTime"));
@@ -237,7 +238,7 @@ public class MaiTian implements AdCreateService {
         int revenueId = createRevenue(itemId, ads.getBegin(), ads.getEnd());
         int reservationId = createReservation(itemId, revenueId, ads.getDealMode(), ads.getContractMode(), ads.getBegin(), ads.getEnd());
         int dealId = createDeal(ads.getDealMode(), ads.getBegin(), ads.getEnd(), ads.getCategoryEnum());
-        int dealItemId = createDealItem(String.valueOf(reservationId), dealId, String.valueOf(var0.getPackageId()), revenueId, String.valueOf(ads.getShowAmount()),
+        int dealItemId = createDealItem(String.valueOf(reservationId), dealId, String.valueOf(var0.getPackageId()), revenueId, String.valueOf(ads.getShowNumber()),
                 ads.getShowRadio(), ads.getDealMode(), ads.getContractMode());
 
         List<Task> tasks = new ArrayList<>();

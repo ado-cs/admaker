@@ -18,7 +18,7 @@ public class NewAds {
     private String name;
     private String begin;
     private String end;
-    private Integer showAmount;
+    private Integer showNumber;
     private Double showRadio;
 
     private DealMode dealMode;

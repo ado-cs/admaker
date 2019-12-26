@@ -91,7 +91,7 @@ function composeData() {
     if (!data.fee) data.fee = parseInt(data.type) === 1 && parseInt(data.deal) === 2 ? 2 : 1;
     if (!data.flow) data.flow = 1;
     if (!data.category) data.category = 1;
-    if (!data.showNumber || isNaN(parseInt(data.showNumber)) || parseInt(data.showNumber) <= 0) data.showNumber = 10000;
+    if (!data.showNumber || isNaN(parseInt(data.showNumber)) || parseInt(data.showNumber) < 10 || parseInt(data.showNumber) > 99999) data.showNumber = 10000;
     if (!data.showRadio || isNaN(parseInt(data.showRadio)) || parseInt(data.showRadio) <= 0 || parseInt(data.showRadio) > 100) data.showRadio = 0.4;
     else data.showRadio /= 100;
     let date = new Date();
