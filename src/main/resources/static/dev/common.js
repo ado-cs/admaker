@@ -96,6 +96,7 @@ function composeData() {
     if (isNaN(amount) || amount < 1) { msgBox('提示', '请输入正确的广告数量'); return false }
 
     if (!data.deal) data.deal = 1;
+    if (!data.dspId) data.dspId = 10101;
     if (!data.fee) data.fee = parseInt(data.type) === 1 && parseInt(data.deal) === 2 ? 2 : 1;
     if (!data.flow) data.flow = 1;
     if (!data.category) data.category = 1;

@@ -8,6 +8,7 @@ import we.lcx.admaker.common.enums.*;
  **/
 @Data
 public class NewAds {
+    private Integer dspId;
     private Integer flight;
     private String flightName;
     private Integer type;

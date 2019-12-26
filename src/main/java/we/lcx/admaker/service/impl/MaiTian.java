@@ -45,7 +45,7 @@ public class MaiTian implements AdCreateService {
     private String URL;
 
     @Value("${ad.common.dspId}")
-    private String DSP_ID;
+    private Integer DSP_ID;
 
     //以下字段需在麦田提前建立对应条目
 
@@ -169,7 +169,7 @@ public class MaiTian implements AdCreateService {
         else return DEAL_ID + category.getCode() + 3;
     }
 
-    private int createDealItem(String flightName, String reservationId, int dealId, String packageId, int revenueId,
+    private int createDealItem(Integer dspId, String flightName, String reservationId, int dealId, String packageId, int revenueId,
                                String showAmount, double showRadio, DealMode deal, ContractMode fee) {
         TaskResult result = HttpExecutor.doRequest(
                 Task.post(URL + URLs.MAITIAN_QUERY)
@@ -188,7 +188,7 @@ public class MaiTian implements AdCreateService {
                 .put("refundAmountRatio", deal == DealMode.PD ? 1 : 0)
                 .put("resourceRevenueUid", revenueId)
                 .put("deliveryPeriods", obj)
-                .put("dspUid", DSP_ID)
+                .put("dspUid", dspId)
                 .put("costType", deal == DealMode.PD ? "OFFLINE_SETTLE" : "FREE_TEST")
                 .cd("deliveryPeriods").each(v -> {
                     v.put("serveBeginTime", v.get("beginTime"));
@@ -241,8 +241,9 @@ public class MaiTian implements AdCreateService {
         List<Task> tasks = new ArrayList<>();
         for (int i = 0; i < ads.getAmount(); i++) {
             int reservationId = createReservation(itemId, revenueId, ads.getDealMode(), ads.getContractMode(), ads.getBegin(), ads.getEnd());
-            int dealItemId = createDealItem(var0.getFlightName(), String.valueOf(reservationId), dealId, String.valueOf(var0.getPackageId()),
+            int dealItemId = createDealItem(ads.getDspId(), var0.getFlightName(), String.valueOf(reservationId), dealId, String.valueOf(var0.getPackageId()),
                     revenueId, String.valueOf(ads.getShowNumber()), ads.getShowRadio(), ads.getDealMode(), ads.getContractMode());
+            if (DSP_ID.equals(ads.getDspId())) continue;
             Entity entity = Entity.of(Params.MAITIAN_CREATE);
             entity.put("name", ads.getName() + "_" + i + WordsTool.randomSuffix(4))
                     .put("execPeriods", WordsTool.toList(WordsTool.parseTime(ads.getBegin()), WordsTool.parseTime(ads.getEnd()) + DAY - 1))
