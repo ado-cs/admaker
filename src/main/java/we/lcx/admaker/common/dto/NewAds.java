@@ -10,7 +10,6 @@ import we.lcx.admaker.common.enums.*;
 public class NewAds {
     private Integer dspId;
     private Integer flight;
-    private String flightName;
     private Integer type;
     private Integer amount;
     private Integer deal;

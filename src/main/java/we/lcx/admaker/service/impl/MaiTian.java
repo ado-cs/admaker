@@ -204,7 +204,7 @@ public class MaiTian implements AdCreateService {
 
     @Override
     public int createAd(NewAds ads) {
-        Ad var0 = basic.getAdFlight(ads.getFlight(), ads.getFlightName());
+        Ad var0 = basic.getAdFlight(ads.getFlight());
         TaskResult result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_TEMPLATE).cookie(cookie)
                 .param(Entity.of(Params.MAITIAN_TEMPLATE).put("uid", var0.getPackageId())));
         result.valid("获取版位模板信息失败");

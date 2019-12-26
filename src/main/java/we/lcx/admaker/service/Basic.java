@@ -18,6 +18,7 @@ import we.lcx.admaker.utils.HttpExecutor;
 import we.lcx.admaker.utils.WordsTool;
 import javax.annotation.PostConstruct;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -39,6 +40,8 @@ public class Basic {
     private Integer DSP_ID;
 
     private Map<Integer, Ad> flights = new HashMap<>();
+
+    private volatile ConcurrentHashMap<Integer, String> flightNames = new ConcurrentHashMap<>();
     private volatile boolean processing;
 
     @PostConstruct
@@ -110,12 +113,13 @@ public class Basic {
                 var0.add(var4);
                 var4.put("name", var3.getName());
                 var4.put("value", var3.getId() + "_" + var3.getAdType());
+                flightNames.put(var3.getId(), var3.getName());
             }
         }
         return var0;
     }
 
-    public Ad getAdFlight(Integer id, String name) {
+    public Ad getAdFlight(Integer id) {
         Ad var0 = flights.get(id);
         if (var0 != null) return var0;
         TaskResult var1 = HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_QUERY)
@@ -134,7 +138,7 @@ public class Basic {
         if (var3 == -1) throw new RuntimeException("不支持该广告位的模板类型");
         HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_CREATE)
                 .param(Entity.of(Params.YUNYING_CREATE)
-                        .put("name", name + WordsTool.randomSuffix(4))
+                        .put("name", flightNames.get(id) + WordsTool.randomSuffix(4))
                         .put("flightUidList", WordsTool.toList(id))
                         .put("templateUidList", WordsTool.toList(var3)))).valid("创建广告版位失败");
         var3 = 3;
@@ -172,6 +176,9 @@ public class Basic {
         int var2 = 0;
         for (TaskResult var3 : HttpExecutor.execute(var0)) {
             if (var3.isSuccess()) var2++;
+        }
+        if (var2 < list.size()) {
+            log.error("{}个广告单审核未通过", list.size() - var2);
         }
         return var2;
     }

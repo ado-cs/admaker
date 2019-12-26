@@ -49,7 +49,7 @@ public class MaiSui implements AdCreateService {
     @Override
     public int createAd(NewAds ads) {
         basic.checkFlight(ads.getFlight());
-        Ad var0 = basic.getAdFlight(ads.getFlight(), ads.getFlightName());
+        Ad var0 = basic.getAdFlight(ads.getFlight());
 //        String var2 = getPrice(PLAN_ID, var0.getPackageId(), ads.getBiddingMode());
 //
 //        var2 = String.valueOf((int) Math.ceil(Double.parseDouble(var2) / 10));
@@ -70,6 +70,7 @@ public class MaiSui implements AdCreateService {
                     .put("templateRefId", var0.getRefId())
                     .put("materialName", null)
                     .cd("material")
+                    .put("content", "1234567890")
                     .put("showType", var0.getShowType())
                     .put("mainShowType", var0.getMainType().getCode())
                     .put("mainTitle", "auto creation")

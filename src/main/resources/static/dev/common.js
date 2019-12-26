@@ -73,8 +73,6 @@ function setDisabled(names, flag) {
     }
 }
 
-let flights = [];
-
 function composeData() {
     let data = {};
     $('input').each(function () {
@@ -83,14 +81,8 @@ function composeData() {
             data[name] = $(this).val()
         }
     });
-    if (!data.flight) { msgBox('提示', '请选择广告位'); return false }
-    for (let v of flights) {
-        if (v.value === data.flight) {
-            data.flightName = v.name;
-            break;
-        }
-    }
     data.flight = divide(data.flight);
+    if (!data.flight) { msgBox('提示', '请选择广告位'); return false }
     if (!data.type) { msgBox('提示', '请选择广告类型'); return false }
     let amount = parseInt(data.amount);
     if (isNaN(amount) || amount < 1) { msgBox('提示', '请输入正确的广告数量'); return false }
@@ -227,7 +219,6 @@ function initEvents() {
             onResponse: function (response) {
                 if (!response || !response.success || !response.results || response.results.length === 0)
                     fillOptions('flight', []);
-                else flights = response.results;
                 return response;
             }
         }
