@@ -58,7 +58,7 @@ public class MaiTian implements AdCreateService {
     @Value("${ad.maitian.mediaId}")
     private Integer MEDIA_ID; //资源创建者id
 
-    @Value("${ad.maitian.mediaId}")
+    @Value("${ad.maitian.dealId}")
     private Integer DEAL_ID; //排期第一个id
 
     private String cookie;
@@ -243,7 +243,7 @@ public class MaiTian implements AdCreateService {
             int reservationId = createReservation(itemId, revenueId, ads.getDealMode(), ads.getContractMode(), ads.getBegin(), ads.getEnd());
             int dealItemId = createDealItem(ads.getDspId(), var0.getFlightName(), String.valueOf(reservationId), dealId, String.valueOf(var0.getPackageId()),
                     revenueId, String.valueOf(ads.getShowNumber()), ads.getShowRadio(), ads.getDealMode(), ads.getContractMode());
-            if (DSP_ID.equals(ads.getDspId())) continue;
+            if (!DSP_ID.equals(ads.getDspId())) continue;
             Entity entity = Entity.of(Params.MAITIAN_CREATE);
             entity.put("name", ads.getName() + "_" + i + WordsTool.randomSuffix(4))
                     .put("execPeriods", WordsTool.toList(WordsTool.parseTime(ads.getBegin()), WordsTool.parseTime(ads.getEnd()) + DAY - 1))
@@ -254,6 +254,6 @@ public class MaiTian implements AdCreateService {
                     .put("scheduleItemId", dealItemId);
             tasks.add(Task.post(URL + URLs.MAITIAN_CREATE).cookie(cookie).param(entity));
         }
-        return basic.approveAds(HttpExecutor.execute(tasks));
+        return DSP_ID.equals(ads.getDspId()) ? basic.approveAds(HttpExecutor.execute(tasks)) : ads.getAmount();
     }
 }
