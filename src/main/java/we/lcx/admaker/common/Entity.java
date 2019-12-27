@@ -154,6 +154,15 @@ public class Entity {
         else throw new RuntimeException("Entity:get 当前非map对象");
     }
 
+    public Entity foreach(Function<Map, Object> f) {
+        Object obj = nodes.getLast();
+        if (obj instanceof List) {
+            for (Object v : (List) obj) f.apply((Map) v);
+        }
+        else throw new RuntimeException("Entity:each 当前非list对象");
+        return this;
+    }
+
     public Entity each(Function<Map, Boolean> f) {
         Object obj = nodes.getLast();
         if (obj instanceof List) {

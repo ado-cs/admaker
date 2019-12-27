@@ -27,5 +27,14 @@ public interface Params {
     String MAITIAN_CREATIVE = "{\"id\":null,\"name\":\"创意1\",\"monitorMark\":\"DEFAULT\",\"destinationUrl\":\"http://www.target.com\",\"exposureMonitorList\":[\"\"],\"clickMonitorList\":[\"\"],\"videoPlayMonitorList\":[\"\"],\"visibleMonitorList\":[\"\"],\"templateRefId\":\"\",\"mainTitle\":\"\",\"subTitle\":\"\",\"content\":\"\",\"mediaSponsorId\":\"\",\"multiMediaList\":[],\"dynamicWords\":[],\"template\":{}}";
     String MAITIAN_CREATE = "{\"id\":null,\"name\":\"\",\"relatedAdId\":\"\",\"scheduleItemInfo\":{\"positionId\":\"2009405\",\"scheduleId\":354728,\"scheduleItemId\":488620,\"relateType\":\"\",\"relatedScheduleItemUid\":\"\"},\"execPeriods\":[1577376000000,1577462399999],\"product\":{\"id\":\"\",\"type\":\"101\",\"productReference\":\"http://www.google.com\",\"name\":\"\",\"md5\":\"\",\"packageName\":\"\",\"size\":null},\"creatives\":[]}";
 
+    String MAITIAN_PAGE = "{\"scheduleItemUid\":\"\",\"offset\":0,\"limit\":10}";
+    String MAITIAN_DETAIL = "{uid: \"\"}";
+    String MAITIAN_ITEM_CLOSE = "{\"uid\": 0,\"version\":1,\"trafficSwitch\":\"CLOSE\"}";
+    String MAITIAN_AD_LIST = "{\"status\":\"1\",\"execPeriod\":{\"startTime\":\"\",\"endTime\":\"\"},\"adformId\":\"\",\"scheduleItemName\":\"\",\"nonStandardResourceName\":\"\",\"scheduleName\":\"\",\"scheduleItemId\":0,\"positionName\":\"\",\"positionId\":\"\",\"offset\":0,\"limit\":10}";
+    String MAITIAN_AD_CLOSE = "{\"id\":0,\"status\":\"411\",\"version\":2}";
+    String MAITIAN_RESERVATION_DELETE = "{\"uid\":0,\"version\":0}";
+    String MAITIAN_ITEM_DELETE = "{\"uid\":0,\"version\":1}";
+    String MAITIAN_AD_DELETE = "{\"uid\":0,\"version\":4}";
+
     String COMMON_APPROVE = "{\"creativeId\":\"MAISUI_1595088\",\"result\":1,\"timestamp\":\"98888535352275\",\"memo\":\"描述\"}";
 }

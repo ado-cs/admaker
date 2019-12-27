@@ -26,6 +26,15 @@ public interface URLs {
     String MAITIAN_TEMPLATE = "advertise/listTemplate";
     String MAITIAN_CREATE = "advertise/create";
 
+    String MAITIAN_PAGE = "schedule/page";
+    String MAITIAN_DETAIL = "schedule/detail";
+    String MAITIAN_ITEM_CLOSE = "schedule/item/trafficSwitch/update";
+    String MAITIAN_AD_LIST = "advertise/list";
+    String MAITIAN_AD_CLOSE = "advertise/status";
+    String MAITIAN_RESERVATION_DELETE = "reserve/delete";
+    String MAITIAN_ITEM_DELETE = "schedule/item/delete";
+    String MAITIAN_AD_DELETE = "advertise/delete";
+
     String COMMON_APPROVE = "autoAudit/callback?inner=inner";
 
 }

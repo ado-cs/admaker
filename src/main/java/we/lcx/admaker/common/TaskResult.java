@@ -34,7 +34,7 @@ public class TaskResult {
         Object success = map.get("success");
         result.success = success instanceof Boolean && (Boolean) success;
         if (!result.success) {
-            log.error("failed request: code = {}, body = {}", resp.getStatusCode(), resp.getBody());
+            log.error("request failed: code = {}, body = {}", resp.getStatusCode(), resp.getBody());
             result.error = map.get("cause");
         }
         return result;

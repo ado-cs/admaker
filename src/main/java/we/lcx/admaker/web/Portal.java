@@ -13,6 +13,8 @@ import we.lcx.admaker.service.Basic;
 import we.lcx.admaker.utils.WordsTool;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by LinChenxiao on 2019/12/13 17:02
@@ -37,6 +39,14 @@ public class Portal {
     @ResponseBody
     public Result query(@PathVariable String query) {
         return Result.ok(basic.queryFlight(query));
+    }
+
+
+    @GetMapping("/j/delete")
+    @ResponseBody
+    public Result close(Integer[] id, boolean delete) {
+        maiTian.closeItems(Arrays.asList(id), delete);
+        return Result.ok();
     }
 
     @PostMapping("/j/create")

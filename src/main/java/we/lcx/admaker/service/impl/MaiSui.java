@@ -135,6 +135,11 @@ public class MaiSui implements AdCreateService {
     }
 
     @Override
+    public void closeItems(List<Integer> itemIds, boolean delete) {
+
+    }
+
+    @Override
     public void cancel(String traceId) {
         traceMap.remove(traceId);
     }

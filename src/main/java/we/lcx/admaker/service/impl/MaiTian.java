@@ -23,10 +23,7 @@ import we.lcx.admaker.utils.WordsTool;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by LinChenxiao on 2019/12/23 17:26
@@ -228,7 +225,7 @@ public class MaiTian implements AdCreateService {
         }
         creative.cd("multiMediaList");
         int idx = 0;
-        for(Unit unit : ad.getUnits()) {
+        for (Unit unit : ad.getUnits()) {
             if (unit.getType() == ShowType.PICTURE) {
                 creative.put("multiMediaType", 1)
                         .put("materialMd5", Settings.DEFAULT_MD5)
@@ -282,6 +279,96 @@ public class MaiTian implements AdCreateService {
         List<Integer> failed = basic.approveAds(adIds);
         return CollectionUtils.isEmpty(failed) ? Result.ok() :
                 Result.fail(String.format("%d个广告创建失败，%d个创意审核失败！", ads.getAmount() - adIds.size(), failed.size()));
+    }
+
+    @Override
+    public void closeItems(List<Integer> itemIds, boolean delete) {
+        Map<Integer, Integer> dealItems = new HashMap<>();
+        Map<Integer, Integer> versions = new HashMap<>();
+        Map<Integer, Boolean> status = new HashMap<>();
+
+        for (Integer id : new HashSet<>(itemIds)) {
+            TaskResult result;
+            Integer resId = dealItems.get(id);
+            Integer version = versions.get(id);
+            Boolean flag = status.get(id);
+
+            if (resId == null) {
+                result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_PAGE).cookie(cookie).param(Entity.of(Params.MAITIAN_PAGE)
+                        .put("scheduleItemUid", id)));
+                if (!result.isSuccess()) {
+                    log.error("获取排期条目所在排期ID失败，itemId = {}", id);
+                    continue;
+                }
+                Integer dealId = (Integer) result.getEntity().get("result list uid");
+                result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_DETAIL).cookie(cookie).param(Entity.of(Params.MAITIAN_DETAIL)
+                        .put("uid", String.valueOf(dealId))));
+                if (!result.isSuccess()) {
+                    log.error("获取排期下所有排期条目详情失败，itemId = {}", id);
+                    continue;
+                }
+                result.getEntity().cd("result/items").each(v -> {
+                    Integer uid = (Integer) v.get("uid");
+                    dealItems.put(uid, (Integer) v.get("reserveItemUid"));
+                    versions.put(uid, (Integer) v.get("version"));
+                    status.put(uid, "ON".equals(v.get("trafficSwitch code")));
+                    return false;
+                });
+                resId = dealItems.get(id);
+                version = versions.get(id);
+                flag = status.get(id);
+            }
+            if (resId == null || version == null || flag == null) {
+                log.error("获取排期条目关联预约ID失败，itemId = {}", id);
+                continue;
+            }
+            if (flag) {
+                result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_ITEM_CLOSE).cookie(cookie).param(Entity.of(Params.MAITIAN_ITEM_CLOSE)
+                        .put("uid", id).put("version", version)));
+                if (!result.isSuccess()) {
+                    log.error("关闭排期条目流量失败，itemId = {}", id);
+                    continue;
+                }
+                version++;
+            }
+
+            result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_AD_LIST).cookie(cookie).param(Entity.of(Params.MAITIAN_AD_LIST)
+                    .put("scheduleItemId", id)));
+            if (!result.isSuccess()) {
+                log.error("获取排期条目下广告位失败，itemId = {}", id);
+                continue;
+            }
+            result.getEntity().cd("result/list").each(v -> {
+                Integer adId = (Integer) v.get("id");
+                Integer vs = (Integer) v.get("version");
+                if ("1001".equals(v.get("activeStatus code"))) {
+                    TaskResult r = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_AD_CLOSE).cookie(cookie).param(Entity.of(Params.MAITIAN_AD_CLOSE)
+                            .put("id", adId).put("version", vs)));
+                    if (!r.isSuccess()) log.error("关闭广告失败，itemId = {}, adId = {}", id, adId);
+                    else vs++;
+                }
+                if (delete &&
+                        !HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_AD_DELETE).cookie(cookie).param(Entity.of(Params.MAITIAN_AD_DELETE)
+                                .put("uid", adId).put("version", vs))).isSuccess())
+                    log.error("删除广告失败，itemId = {}, adId = {}", id, adId);
+                return false;
+            });
+
+            if (delete) {
+                result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_ITEM_DELETE).cookie(cookie).param(Entity.of(Params.MAITIAN_ITEM_DELETE)
+                        .put("uid", id).put("version", version)));
+                if (!result.isSuccess()) {
+                    log.error("删除排期条目失败，itemId = {}", id);
+                    continue;
+                }
+
+                result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_RESERVATION_DELETE).cookie(cookie).param(Entity.of(Params.MAITIAN_RESERVATION_DELETE)
+                        .put("uid", resId)));
+                if (!result.isSuccess())
+                    log.error("删除资源预定失败，itemId = {}, 预定id = {}", id, resId);
+
+            }
+        }
     }
 
     @Override
