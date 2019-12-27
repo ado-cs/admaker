@@ -41,6 +41,7 @@ public class Basic {
     private Map<Integer, Ad> flights = new HashMap<>();
 
     private volatile ConcurrentHashMap<Integer, String> flightNames = new ConcurrentHashMap<>();
+    private volatile ConcurrentHashMap<Integer, Integer> flightTypes = new ConcurrentHashMap<>();
     private volatile boolean processing;
 
     @PostConstruct
@@ -113,6 +114,7 @@ public class Basic {
                 var4.put("name", var3.getName());
                 var4.put("value", var3.getId() + "_" + var3.getAdType());
                 flightNames.put(var3.getId(), var3.getName());
+                flightTypes.put(var3.getId(), var3.getAdType());
             }
         }
         return var0;
@@ -123,7 +125,7 @@ public class Basic {
         if (var0 != null) return var0;
         TaskResult var1 = HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_QUERY)
                 .param(Entity.of(Params.YUNYING_QUERY).put("flightId", id)));
-        var1.valid("获取广告位信息失败");
+        var1.valid("获取模板单元失败");
         final AtomicInteger var2 = new AtomicInteger(-1);
         var1.getEntity().cd("result").each(var3 -> {
             String var4 = String.valueOf(var3.get("mainShowType"));
@@ -139,6 +141,7 @@ public class Basic {
                 .param(Entity.of(Params.YUNYING_CREATE)
                         .put("name", flightNames.get(id) + WordsTool.randomSuffix(4))
                         .put("flightUidList", WordsTool.toList(id))
+                        .put("adType", String.valueOf(flightTypes.get(id)))
                         .put("templateUidList", WordsTool.toList(var3)))).valid("创建广告版位失败");
         var3 = 3;
         initFlights();

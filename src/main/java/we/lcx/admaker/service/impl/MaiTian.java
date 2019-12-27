@@ -1,6 +1,5 @@
 package we.lcx.admaker.service.impl;
 
-import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -229,19 +228,18 @@ public class MaiTian implements AdCreateService {
         }
         creative.cd("multiMediaList");
         int idx = 0;
-        for (int i = 0; i < mediaUnits.size(); i++) {
-            Unit unit = ad.getUnits().get(idx++);
+        for(Unit unit : ad.getUnits()) {
             if (unit.getType() == ShowType.PICTURE) {
                 creative.put("multiMediaType", 1)
                         .put("materialMd5", Settings.DEFAULT_MD5)
                         .put("materialSize", unit.getLimit())
                         .put("materialUrl", Settings.DEFAULT_URL)
-                        .put("sortIndex", ((Map) mediaUnits.get(i)).get("sortIndex"))
+                        .put("sortIndex", ((Map) mediaUnits.get(idx)).get("sortIndex"))
                         .put("backendMaterialUrl", "")
                         .put("resourceId", "")
-                        .put("template", mediaUnits.get(i))
+                        .put("template", mediaUnits.get(idx++))
                         .add();
-            } else i--;
+            }
         }
         return WordsTool.toList(creative.getHead());
     }
