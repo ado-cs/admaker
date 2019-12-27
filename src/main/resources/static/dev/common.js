@@ -171,6 +171,9 @@ function selectionChanged(self) {
         }
 
     }
+    else if (name === "begin") {
+        $('input[name="end"]').val(sel);
+    }
 
     if (next != null) {
         if (val !== next.val()) selectionChanged(next)
