@@ -15,6 +15,7 @@ public class Task {
     private HttpMethod method;
     private List<String> cookie;
     private Map params;
+    private Object tag;
 
     public static Task get(String url) {
         Task task = new Task();
@@ -37,6 +38,11 @@ public class Task {
 
     public Task param(Entity entity) {
         this.params = entity.getHead();
+        return this;
+    }
+
+    public Task tag(Object obj) {
+        this.tag = obj;
         return this;
     }
 }

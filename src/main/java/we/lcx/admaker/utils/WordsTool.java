@@ -14,8 +14,12 @@ public class WordsTool {
         return Arrays.asList(obj);
     }
 
+    public static String generateId() {
+        return UUID.randomUUID().toString().replace("-", "");
+    }
+
     public static String randomSuffix(int length) {
-        String s = UUID.randomUUID().toString().replace("-", "");
+        String s = generateId();
         return "_" + (s.length() <= length ? s : s.substring(0, length));
     }
 

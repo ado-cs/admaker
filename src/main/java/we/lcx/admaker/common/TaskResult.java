@@ -15,22 +15,25 @@ import java.util.Map;
 public class TaskResult {
     private boolean success = false;
     private Entity entity;
-    private HttpStatus status;
     private HttpHeaders headers;
-    private String body;
+    private Object error;
+    private Object tag;
 
-    public static TaskResult of(ResponseEntity<String> resp) {
+    public static TaskResult of() {
+        return new TaskResult();
+    }
+
+    public static TaskResult of(ResponseEntity<String> resp, Object tag) {
         TaskResult result = new TaskResult();
+        result.tag = tag;
         if (resp == null) return result;
-        result.status = resp.getStatusCode();
-        result.body = resp.getBody();
-        Map map = JSON.parseObject(result.body, Map.class);
+        Map map = JSON.parseObject(resp.getBody(), Map.class);
         if (map == null) return result;
-        Object success = map.get("success");
-        if (!(success instanceof Boolean && (Boolean) success)) return result;
         result.entity = new Entity(map);
         result.headers = resp.getHeaders();
-        result.success = true;
+        Object success = map.get("success");
+        result.success = success instanceof Boolean && (Boolean) success;
+        if (!result.success) result.error = map.get("cause");
         return result;
     }
 
@@ -39,13 +42,12 @@ public class TaskResult {
     }
 
     public void error() {
-        if (success) return;
-        log.error("entity invalid, code = {}, body = {}", status, body);
+        if (!success) log.error(String.valueOf(error));
     }
 
     public void valid(String message) {
         if (success) return;
-        log.error("entity invalid, code = {}, body = {}", status, body);
+        if (error != null) message += ": " + error;
         throw new RuntimeException(message);
     }
 
@@ -54,4 +56,6 @@ public class TaskResult {
     public Entity getEntity() {
         return entity;
     }
+
+    public Object getTag() { return tag; }
 }

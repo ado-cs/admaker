@@ -62,11 +62,11 @@ public class HttpExecutor {
             }
         }
         try {
-            return TaskResult.of(restTemplate.exchange(task.getUrl(), task.getMethod(), new HttpEntity(params, headers), String.class));
+            return TaskResult.of(restTemplate.exchange(task.getUrl(), task.getMethod(), new HttpEntity(params, headers), String.class), task.getTag());
         }
         catch (Exception e) {
             log.error("doRequest Error. ", e);
-            return TaskResult.of(null);
+            return TaskResult.of();
         }
     }
 }

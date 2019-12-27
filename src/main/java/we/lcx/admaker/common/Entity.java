@@ -2,6 +2,7 @@ package we.lcx.admaker.common;
 
 import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import we.lcx.admaker.common.annotation.Ignore;
 import we.lcx.admaker.common.annotation.Level;
@@ -23,6 +24,29 @@ public class Entity {
     public static Entity of(String param) {
         Map map = JSON.parseObject(param, Map.class);
         return new Entity(map == null ? new HashMap() : map);
+    }
+
+    public Entity copy() {
+        return new Entity((Map) copy(nodes.getFirst()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object copy(Object obj) {
+        if (obj instanceof Map) {
+            Map oldMap = (Map) obj;
+            Map newMap = new HashMap();
+            for (Object key : oldMap.keySet()) {
+                newMap.put(key, copy(oldMap.get(key)));
+            }
+            return newMap;
+        }
+        else if (obj instanceof List) {
+            List oldList = (List) obj;
+            List newList = new ArrayList();
+            for (Object v : oldList) newList.add(copy(v));
+            return newList;
+        }
+        else return obj;
     }
 
     @SuppressWarnings("unchecked")

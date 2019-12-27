@@ -18,8 +18,7 @@ public class Result {
     }
 
     public static Result ok(Object results) {
-        Result result = new Result();
-        result.success = true;
+        Result result = ok();
         result.results = results;
         return result;
     }
@@ -28,6 +27,12 @@ public class Result {
         Result result = new Result();
         result.success = false;
         result.message = message;
+        return result;
+    }
+
+    public static Result fail(String message, Object results) {
+        Result result = fail(message);
+        result.results = results;
         return result;
     }
 }

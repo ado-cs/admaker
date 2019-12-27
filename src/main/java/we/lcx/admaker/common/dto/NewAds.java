@@ -28,6 +28,14 @@ public class NewAds {
     private FlowEnum flowEnum;
     private CategoryEnum categoryEnum;
 
+    private String traceId;
+    private Ad ad;
+    private int resourceId;
+    private int resourceItemId;
+    private int revenueId;
+    private int dealId;
+
+
     public void convert() {
         dealMode = DealMode.of(deal);
         biddingMode = BiddingMode.of(fee);

@@ -11,7 +11,6 @@ import we.lcx.admaker.common.TaskResult;
 import we.lcx.admaker.common.dto.Ad;
 import we.lcx.admaker.common.dto.Unit;
 import we.lcx.admaker.common.consts.Params;
-import we.lcx.admaker.common.consts.Settings;
 import we.lcx.admaker.common.consts.URLs;
 import we.lcx.admaker.common.enums.ShowType;
 import we.lcx.admaker.utils.HttpExecutor;
@@ -157,28 +156,16 @@ public class Basic {
                 .valid("运营平台开启广告位失败");
     }
 
-    public int approveAds(List<TaskResult> list) {
+    public List<Integer> approveAds(List<Integer> list) {
         List<Task> var0 = new ArrayList<>();
-        boolean var1 = true;
-        for (TaskResult var2 : list) {
-            if (!var2.isSuccess()) {
-                if (var1) {
-                    var1 = false;
-                    var2.error();
-                }
-                continue;
-            }
-            var0.add(Task.post(URL_MAITIAN + URLs.COMMON_APPROVE)
+        for (Integer var1 : list) {
+            var0.add(Task.post(URL_MAITIAN + URLs.COMMON_APPROVE).tag(var1)
                     .param(Entity.of(Params.COMMON_APPROVE)
-                            .put("creativeId", "MAISUI_" + (Integer.valueOf(String.valueOf(var2.getEntity().get("result"))) + 9500))));
+                            .put("creativeId", "MAISUI_" + (var1 + 9500))));
         }
-        if (var0.size() == 0) return 0;
-        int var2 = 0;
-        for (TaskResult var3 : HttpExecutor.execute(var0)) {
-            if (var3.isSuccess()) var2++;
-        }
-        if (var2 < list.size()) {
-            log.error("{}个广告单审核未通过", list.size() - var2);
+        List<Integer> var2 = new ArrayList<>();
+        for (TaskResult var1 : HttpExecutor.execute(var0)) {
+            if (!var1.isSuccess()) var2.add((Integer) var1.getTag());
         }
         return var2;
     }
