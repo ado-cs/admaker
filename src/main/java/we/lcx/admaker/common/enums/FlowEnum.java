@@ -5,7 +5,7 @@ package we.lcx.admaker.common.enums;
  **/
 public enum FlowEnum {
     F1(1, "ALL"),
-    F1_2(2, "ONE_OVER_TWO"),
+    F1_2(2, "HALF"),
     F1_3(3, "ONE_OVER_THREE"),
     F2_3(4, "TWO_OVER_THREE"),
     F1_4(5, "ONE_OVER_FOUR"),
