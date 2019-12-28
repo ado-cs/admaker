@@ -8,7 +8,7 @@ import we.lcx.admaker.common.annotation.Level;
  **/
 @Data
 @Level("result list")
-public class QueryFlight {
+public class FlightSearch {
     private Integer id;
     private String name;
     private String mediaCode;

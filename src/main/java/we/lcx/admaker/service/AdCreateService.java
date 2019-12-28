@@ -1,7 +1,7 @@
 package we.lcx.admaker.service;
 
 import we.lcx.admaker.common.Result;
-import we.lcx.admaker.common.dto.NewAds;
+import we.lcx.admaker.common.entities.NewAds;
 
 import java.util.List;
 

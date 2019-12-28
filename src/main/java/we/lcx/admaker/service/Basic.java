@@ -8,8 +8,8 @@ import we.lcx.admaker.common.response.*;
 import we.lcx.admaker.common.Entity;
 import we.lcx.admaker.common.Task;
 import we.lcx.admaker.common.TaskResult;
-import we.lcx.admaker.common.dto.Ad;
-import we.lcx.admaker.common.dto.Unit;
+import we.lcx.admaker.common.entities.Ad;
+import we.lcx.admaker.common.entities.Unit;
 import we.lcx.admaker.common.consts.Params;
 import we.lcx.admaker.common.consts.URLs;
 import we.lcx.admaker.common.enums.ShowType;
@@ -105,9 +105,9 @@ public class Basic {
         TaskResult var1 = HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_LIST)
                 .param(Entity.of(Params.YUNYING_LIST).put("nameLike", keyword)));
         var1.valid("获取广告位数据失败");
-        List<QueryFlight> var2 = var1.getEntity().toList(QueryFlight.class);
+        List<FlightSearch> var2 = var1.getEntity().toList(FlightSearch.class);
         if (var2 == null) return var0;
-        for (QueryFlight var3 : var2) {
+        for (FlightSearch var3 : var2) {
             if ("E7D5508C".equals(var3.getMediaCode()) && !var3.getName().contains("废弃") && !var3.getName().contains("无效")) {
                 Map<String, String> var4 = new HashMap<>();
                 var0.add(var4);

@@ -2,7 +2,6 @@ package we.lcx.admaker.common;
 
 import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import we.lcx.admaker.common.annotation.Ignore;
 import we.lcx.admaker.common.annotation.Level;
@@ -159,7 +158,7 @@ public class Entity {
         if (obj instanceof List) {
             for (Object v : (List) obj) f.apply((Map) v);
         }
-        else throw new RuntimeException("Entity:each 当前非list对象");
+        else throw new RuntimeException("Entity:foreach 当前非list对象");
         return this;
     }
 

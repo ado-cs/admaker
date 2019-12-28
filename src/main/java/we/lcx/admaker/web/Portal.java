@@ -7,14 +7,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import we.lcx.admaker.common.Result;
-import we.lcx.admaker.common.dto.NewAds;
+import we.lcx.admaker.common.entities.NewAds;
 import we.lcx.admaker.service.AdCreateService;
 import we.lcx.admaker.service.Basic;
 import we.lcx.admaker.utils.WordsTool;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * Created by LinChenxiao on 2019/12/13 17:02
