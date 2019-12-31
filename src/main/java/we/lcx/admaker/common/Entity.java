@@ -7,6 +7,7 @@ import we.lcx.admaker.common.annotation.Ignore;
 import we.lcx.admaker.common.annotation.Level;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -153,23 +154,42 @@ public class Entity {
         else throw new RuntimeException("Entity:get 当前非map对象");
     }
 
-    public Entity foreach(Function<Map, Object> f) {
-        Object obj = nodes.getLast();
-        if (obj instanceof List) {
-            for (Object v : (List) obj) f.apply((Map) v);
-        }
-        else throw new RuntimeException("Entity:foreach 当前非list对象");
-        return this;
-    }
-
-    public Entity each(Function<Map, Boolean> f) {
+    public Entity each(Consumer<Entity> f) {
         Object obj = nodes.getLast();
         if (obj instanceof List) {
             for (Object v : (List) obj) {
-                if (v instanceof Map && f.apply((Map) v)) {
-                    nodes.addLast(v);
-                    break;
-                }
+                nodes.addLast(v);
+                f.accept(this);
+                nodes.removeLast();
+            }
+        }
+        else if (obj instanceof Map) {
+            for (Object v : ((Map) obj).values()) {
+                nodes.addLast(v);
+                f.accept(this);
+                nodes.removeLast();
+            }
+        }
+        else throw new RuntimeException("Entity:each 当前非可遍历对象");
+        return this;
+    }
+
+    public Entity each(Function<Entity, Boolean> f) {//todo 检查调用 涉及addLast影响
+        Object obj = nodes.getLast();
+        if (obj instanceof List) {
+            for (Object v : (List) obj) {
+                nodes.addLast(v);
+                boolean flag = f.apply(this);
+                nodes.removeLast();
+                if (flag) break;
+            }
+        }
+        else if (obj instanceof Map) {
+            for (Object v : ((Map) obj).values()) {
+                nodes.addLast(v);
+                boolean flag = f.apply(this);
+                nodes.removeLast();
+                if (flag) break;
             }
         }
         else throw new RuntimeException("Entity:each 当前非list对象");

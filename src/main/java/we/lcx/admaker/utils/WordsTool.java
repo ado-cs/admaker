@@ -1,5 +1,7 @@
 package we.lcx.admaker.utils;
 
+import org.springframework.util.CollectionUtils;
+
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -9,6 +11,17 @@ import java.util.*;
 public class WordsTool {
     private static final SimpleDateFormat FORMAT1 = new SimpleDateFormat("yyyyMMdd");
     private static final SimpleDateFormat FORMAT2 = new SimpleDateFormat("yyyy-MM-dd");
+
+    public static boolean notSingle(Collection... lists) {
+        for (Collection v : lists) {
+            if (CollectionUtils.isEmpty(v) || v.size() != 1) return true;
+        }
+        return false;
+    }
+
+    public static boolean notContains(Collection list, Object value) {
+        return CollectionUtils.isEmpty(list) || !list.contains(value);
+    }
 
     public static List toList(Object... obj) {
         return Arrays.asList(obj);
@@ -23,6 +36,13 @@ public class WordsTool {
         return "_" + (s.length() <= length ? s : s.substring(0, length));
     }
 
+    public static String getLimitLength(Integer lowerLength, Integer maxLength) {
+        int min = lowerLength == null ? 0 : lowerLength;
+        int max = maxLength == null ? 0 : maxLength;
+        if (max <= min || min <= 0) return "10";
+        return String.valueOf((int) Math.floor((min + max) / 2.0));
+    }
+
     public static String repeat(String limit) {
         try {
             int len = Integer.parseInt(limit);
@@ -31,8 +51,7 @@ public class WordsTool {
                 s.append('1');
             }
             return s.toString();
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             return "1234567890";
         }
     }
@@ -54,8 +73,7 @@ public class WordsTool {
     public static Date parseDate(String date) {
         try {
             return FORMAT2.parse(date);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException("时间文本格式错误");
         }
     }

@@ -11,9 +11,9 @@ import java.util.List;
 @Data
 public class Ad {
     private Integer flightId;
-    private Integer packageId;
+    private Integer positionId;
     private String flightName;
-    private String packageName;
+    private String positionName;
     private String refId;
     private ShowType mainType;
     private String showType;

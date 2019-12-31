@@ -4,8 +4,10 @@ package we.lcx.admaker.common.consts;
  * Created by LinChenxiao on 2019/12/12 20:00
  **/
 public interface URLs {
-    String YUNYING_LIST = "flight/list";
-    String YUNYING_QUERY = "flight/getFlightTemplate";
+    String YUNYING_POSITIONS = "position/list";
+    String YUNYING_TEMPLATES = "flight/getFlightTemplate";
+    String YUNYING_UNITS = "template/single";
+    String YUNYING_FLIGHT_QUERY = "flight/list";
     String YUNYING_CREATE = "position/create";
     String YUNYING_FLIGHT = "adConfig/queryList";
     String YUNYING_STATUS = "adConfig/changAdFlightAccessStatus";
@@ -14,6 +16,8 @@ public interface URLs {
     String MAISUI_PRICE = "campaignPackage/getAdvisedPrice";
     String MAISUI_CREATE = "adform/create";
     String MAISUI_PACKAGES = "campaignPackage/query/list";
+    String MAISUI_CREATIVE_QUERY = "adform/query/info";
+
 
     String MAITIAN_RESOURCE = "resource/list";
     String MAITIAN_RESOURCE_NEW = "resource/create";
@@ -25,6 +29,7 @@ public interface URLs {
     String MAITIAN_DEAL_ITEM = "schedule/item/create";
     String MAITIAN_TEMPLATE = "advertise/listTemplate";
     String MAITIAN_CREATE = "advertise/create";
+    String MAITIAN_CREATIVE_QUERY = "advertise/itemCreatives";
 
     String MAITIAN_PAGE = "schedule/page";
     String MAITIAN_DETAIL = "schedule/detail";

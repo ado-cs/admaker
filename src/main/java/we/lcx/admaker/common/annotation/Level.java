@@ -9,5 +9,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Level {
     String value() default "";
-    Class type() default String.class;
+    Class type() default Integer.class;
 }

@@ -1,4 +1,4 @@
-package we.lcx.admaker.common.response;
+package we.lcx.admaker.common.json;
 
 import lombok.Data;
 import we.lcx.admaker.common.annotation.Level;

@@ -1,7 +1,6 @@
-package we.lcx.admaker.common.response;
+package we.lcx.admaker.common.json;
 
 import lombok.Data;
-import we.lcx.admaker.common.annotation.Level;
 import we.lcx.admaker.common.enums.ShowType;
 
 /**
@@ -9,8 +8,7 @@ import we.lcx.admaker.common.enums.ShowType;
  **/
 @Data
 public class AdUnit {
-    @Level("uid")
-    private String id;
+    private String uid;
     private String name;
     private Integer need;
     private ShowType type;

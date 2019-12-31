@@ -3,7 +3,6 @@ package we.lcx.admaker.common;
 import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Map;
@@ -48,8 +47,8 @@ public class TaskResult {
         if (!success) log.error(String.valueOf(error));
     }
 
-    public void valid(String message) {
-        if (success) return;
+    public TaskResult valid(String message) {
+        if (success) return this;
         if (error != null) message += ": " + error;
         throw new RuntimeException(message);
     }

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import we.lcx.admaker.common.Result;
+import we.lcx.admaker.common.entities.ModifyAd;
 import we.lcx.admaker.common.entities.NewAds;
 import we.lcx.admaker.service.AdCreateService;
 import we.lcx.admaker.service.Basic;
@@ -40,20 +41,18 @@ public class Portal {
         return Result.ok(basic.queryFlight(query));
     }
 
-
-    @GetMapping("/j/delete")
+    @GetMapping("/j/modify")
     @ResponseBody
-    public Result close(Integer[] id, boolean delete) {
-        maiTian.closeItems(Arrays.asList(id), delete);
+    public Result modify(ModifyAd modifyAd) {
+        maiTian.modify(modifyAd);
         return Result.ok();
     }
 
     @PostMapping("/j/create")
     @ResponseBody
     public Result create(NewAds ads, HttpServletRequest request) {
-        String traceId = StringUtils.isEmpty(ads.getTraceId()) ? WordsTool.generateId() : ads.getTraceId();
-        ads.setTraceId(traceId);
-        request.setAttribute("traceId", traceId);
+        ads.setTraceId(ads.getTraceId() == null ? WordsTool.generateId() : ads.getTraceId());
+        request.setAttribute("traceId", ads.getTraceId());
         ads.convert();
         return ads.getType() == 1 ? maiTian.createAd(ads) : maiSui.createAd(ads);
     }

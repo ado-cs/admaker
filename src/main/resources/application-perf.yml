@@ -2,6 +2,7 @@ ad:
   common:
     account: linchenxiao@corp.netease.com
     dspId: 10101
+    groupId: 10010
   url:
     yunying: http://10.200.132.146:10010/
     maisui: http://10.200.132.146:10020/
