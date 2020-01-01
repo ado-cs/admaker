@@ -131,10 +131,10 @@ public class Basic {
         HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_TEMPLATES)
                 .param(Entity.of(Params.COMMON_QUERY).put("flightId", id)))
                 .valid("获取模板单元失败")
-                .getEntity().cd("result").each(var3 -> {
-            String var4 = String.valueOf(var3.get("mainShowType"));
-            if ("PICTURE".equals(var4) || "TEXT".equals(var4)) {
-                entity.put("templateUidList", WordsTool.toList(var3.get("id")));
+                .getEntity().cd("result").each(t -> {
+            String s = String.valueOf(t.get("mainShowType"));
+            if ("PICTURE".equals(s) || "TEXT".equals(s)) {
+                entity.put("templateUidList", WordsTool.toList(t.get("id")));
                 return true;
             }
             return false;
@@ -183,8 +183,8 @@ public class Basic {
                             .put("creativeId", "MAISUI_" + result.getEntity()
                                     .get(ads.getType() == 1 ? "result list id" : "result adCreativeList creativeId"))));
         }
-        for (TaskResult var1 : HttpExecutor.execute(tasks)) {
-            if (!var1.isSuccess()) failed.add((Integer) var1.getTag());
+        for (TaskResult r : HttpExecutor.execute(tasks)) {
+            if (!r.isSuccess()) failed.add((Integer) r.getTag());
         }
         return failed;
     }

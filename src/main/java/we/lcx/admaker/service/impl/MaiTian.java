@@ -376,7 +376,17 @@ public class MaiTian implements AdCreateService {
     }
 
     @Override
-    public void cancel(String tagId) {
-        //todo
+    public void cancel(String traceId) {
+        List<Integer> dealItems = new ArrayList<>();
+        for (Object v : traceAop.cancel(traceId)) {
+            Pair pair = (Pair) v;
+            if (pair.getValue() != null) dealItems.add((Integer) pair.getValue());
+            else if (pair.getKey() != null) deleteReservation((Integer) pair.getKey());
+        }
+        if (CollectionUtils.isEmpty(dealItems)) return;
+        ModifyAd modifyAd = new ModifyAd();
+        modifyAd.setIds(dealItems);
+        modifyAd.setState(-1);
+        modify(modifyAd);
     }
 }

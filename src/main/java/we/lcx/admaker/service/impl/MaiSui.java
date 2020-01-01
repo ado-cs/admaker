@@ -118,11 +118,15 @@ public class MaiSui implements AdCreateService {
 
     @Override
     public void cancel(String traceId) {
-        traceAop.cancel(traceId);
+        List ids = new ArrayList<>(traceAop.cancel(traceId));
+        ModifyAd modifyAd = new ModifyAd();
+        modifyAd.setIds(ids);
+        modifyAd.setState(-1);
+        modify(modifyAd);
     }
 
     @Override
     public void modify(ModifyAd modifyAd) {
-
+        //TODO
     }
 }

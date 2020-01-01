@@ -103,6 +103,7 @@ public class TraceAop {
         set.remove(r);
     }
 
+    //记录cancel要撤回的条目，合约为dealItem和预约，竞价为广告
     public void done(String traceId, Object obj) {
         TraceLog traceLog = data.get(traceId);
         if (traceLog == null) return;
@@ -115,15 +116,15 @@ public class TraceAop {
         traceLog.cancelItems.addAll(collection);
     }
 
-    public List<Object> cancel(String traceId) {
+    public Set<Object> cancel(String traceId) {
         TraceLog traceLog = data.remove(traceId);
-        return traceLog == null ? new ArrayList<>() : traceLog.cancelItems;
+        return traceLog == null ? new HashSet<>() : traceLog.cancelItems;
     }
 
     private class TraceLog {
         HashMap<String, Object> single = new HashMap<>();
         HashMap<String, Pair<Set<Object>, Set<Object>>> group = new HashMap<>();
-        List<Object> cancelItems = new ArrayList<>();
+        Set<Object> cancelItems = new HashSet<>();
         int finished = 0;
         Set<Integer> failApproved;
     }

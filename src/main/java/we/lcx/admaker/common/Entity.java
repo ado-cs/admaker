@@ -174,7 +174,7 @@ public class Entity {
         return this;
     }
 
-    public Entity each(Function<Entity, Boolean> f) {//todo 检查调用 涉及addLast影响
+    public Entity each(Function<Entity, Boolean> f) {
         Object obj = nodes.getLast();
         if (obj instanceof List) {
             for (Object v : (List) obj) {
