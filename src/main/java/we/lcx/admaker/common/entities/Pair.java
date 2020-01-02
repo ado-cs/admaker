@@ -15,14 +15,4 @@ import java.util.function.Function;
 public class Pair<K, V> {
     private K key;
     private V value;
-    public K getKey(Function<K, K> func) {
-        if (key != null) return key;
-        key = func.apply(null);
-        return key;
-    }
-    public V getValue(Function<V, V> func) {
-        if (value != null) return value;
-        value = func.apply(null);
-        return value;
-    }
 }

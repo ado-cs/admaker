@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import we.lcx.admaker.common.entities.Flight;
 import we.lcx.admaker.common.entities.NewAds;
 import we.lcx.admaker.common.json.*;
 import we.lcx.admaker.common.Entity;
