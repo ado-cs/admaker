@@ -21,6 +21,10 @@ public class Entity {
         this.nodes.add(root);
     }
 
+    public static Entity of() {
+        return new Entity(new HashMap());
+    }
+
     public static Entity of(String param) {
         Map map = JSON.parseObject(param, Map.class);
         return new Entity(map == null ? new HashMap() : map);
@@ -58,11 +62,11 @@ public class Entity {
             int idx = -1;
             if (i != -1) {
                 idx = parseIndex(s);
-                if (idx < 0) throw new RuntimeException("Entity:cd 路径不合法");
+                if (idx < 0) throw new VisibleException("Entity:cd 路径不合法");
                 s = s.substring(0, i);
             }
             if (s.equals("..")) {
-                if (nodes.pollLast() == null || nodes.getLast() == null) throw new RuntimeException("Entity:cd 路径超过边界");
+                if (nodes.pollLast() == null || nodes.getLast() == null) throw new VisibleException("Entity:cd 路径超过边界");
             }
             else if (s.equals("")){
                 if (flag) {
@@ -82,17 +86,17 @@ public class Entity {
                         nodes.addLast(newMap);
                     }
                 }
-                else throw new RuntimeException("Entity:cd 路径错误，试图访问非Map对象");
+                else throw new VisibleException("Entity:cd 路径错误，试图访问非Map对象");
 
             }
             if (i != -1) {
                 Object obj = nodes.getLast();
                 if (obj instanceof List) {
                     List list = (List) obj;
-                    if (idx >= list.size()) throw new RuntimeException("Entity:cd 路径索引超过数组范围");
+                    if (idx >= list.size()) throw new VisibleException("Entity:cd 路径索引超过数组范围");
                     nodes.addLast(list.get(idx));
                 }
-                else throw new RuntimeException("Entity:cd 路径错误，试图访问非数组对象");
+                else throw new VisibleException("Entity:cd 路径错误，试图访问非数组对象");
             }
             flag = false;
         }
@@ -122,12 +126,12 @@ public class Entity {
             nodes.addLast(list);
             return this;
         }
-        throw new RuntimeException("Entity:newList 路径错误，试图访问非Map对象");
+        throw new VisibleException("Entity:newList 路径错误，试图访问非Map对象");
     }
 
     public Entity add() {
-        if (nodes.pollLast() == null) throw new RuntimeException("Entity:add 当前路径超过边界");
-        if (!(nodes.getLast() instanceof List)) throw new RuntimeException("Entity:add 未发现List");
+        if (nodes.pollLast() == null) throw new VisibleException("Entity:add 当前路径超过边界");
+        if (!(nodes.getLast() instanceof List)) throw new VisibleException("Entity:add 未发现List");
         return this;
     }
 
@@ -135,7 +139,7 @@ public class Entity {
     public Entity put(String key, Object value) {
         if (StringUtils.isEmpty(key)) return this;
         Object obj = nodes.getLast();
-        if (obj == null) throw new RuntimeException("Entity:put 当前路径超过边界");
+        if (obj == null) throw new VisibleException("Entity:put 当前路径超过边界");
         if (obj instanceof List) {
             Map map = new HashMap();
             map.put(key, value);
@@ -143,19 +147,20 @@ public class Entity {
             nodes.addLast(map);
         }
         else if (obj instanceof Map) ((Map) obj).put(key, value);
-        else throw new RuntimeException("Entity:put 当前对象不支持");
+        else throw new VisibleException("Entity:put 当前对象不支持");
         return this;
     }
 
     public Object get(String key) {
         Object obj = nodes.getLast();
-        if (obj == null) throw new RuntimeException("Entity:get 当前路径超过边界");
+        if (obj == null) throw new VisibleException("Entity:get 当前路径超过边界");
         if (obj instanceof Map) return get(((Map) obj), key);
-        else throw new RuntimeException("Entity:get 当前非map对象");
+        else throw new VisibleException("Entity:get 当前非map对象");
     }
 
     public Entity each(Consumer<Entity> f) {
         Object obj = nodes.getLast();
+        if (obj == null) return this;
         if (obj instanceof List) {
             for (Object v : (List) obj) {
                 nodes.addLast(v);
@@ -170,12 +175,13 @@ public class Entity {
                 nodes.removeLast();
             }
         }
-        else throw new RuntimeException("Entity:each 当前非可遍历对象");
+        else throw new VisibleException("Entity:each 当前非可遍历对象");
         return this;
     }
 
     public Entity each(Function<Entity, Boolean> f) {
         Object obj = nodes.getLast();
+        if (obj == null) return this;
         if (obj instanceof List) {
             for (Object v : (List) obj) {
                 nodes.addLast(v);
@@ -192,7 +198,7 @@ public class Entity {
                 if (flag) break;
             }
         }
-        else throw new RuntimeException("Entity:each 当前非list对象");
+        else throw new VisibleException("Entity:each 当前非list对象");
         return this;
     }
 

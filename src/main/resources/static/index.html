@@ -9,14 +9,6 @@
 <body style="padding-top: 12px; padding-bottom: 12px">
 <div class="ui container">
     <form class="ui attached segment form">
-
-        <div class="fields">
-            <div class="eight wide field">
-                <label>dspId</label>
-                <input type="text" name="dspId" placeholder="dspId" value="10101">
-            </div>
-
-        </div>
         <div class="fields">
             <div class="required eight wide field">
                 <label>广告位</label>
@@ -52,7 +44,7 @@
             <div class="ui horizontal divider">
                 更多设置
             </div>
-            <div class="two fields">
+            <div class="four fields">
                 <div class="field">
                     <label>售卖方式</label>
                     <div class="ui compact selection dropdown">
@@ -78,9 +70,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="two fields">
                 <div class="field">
                     <label>流量</label>
                     <div class="ui compact selection dropdown">
@@ -110,13 +100,18 @@
                 </div>
             </div>
 
-            <div class="two fields">
-                <div class="field">
+            <div class="fields">
+                <div class="eight wide field">
                     <label>广告名称前缀</label>
                     <input type="text" name="name" placeholder="广告名称前缀">
                 </div>
 
-                <div class="field">
+                <div class="four wide field">
+                    <label>DspID</label>
+                    <input type="text" name="dspId" placeholder="DspID" value="10101">
+                </div>
+
+                <div class="four wide field">
                     <label>排期类别</label>
                     <div class="ui compact selection dropdown">
                         <input type="hidden" name="category" value="1">
@@ -142,9 +137,19 @@
             </div>
         </div>
     </form>
-    <div class="ui two bottom attached buttons">
+    <div class="ui three bottom attached buttons">
         <div id="settings" class="ui button"><i class="angle double down icon"></i> 更多设置</div>
         <div id="create" class="ui primary submit button">创建</div>
+        <div class="ui primary buttons">
+            <div class="ui floating dropdown icon button">
+                <i class="dropdown icon"></i>
+                <div class="menu">
+                    <div id="open" class="item"><i class="toggle on icon"></i> 指定开启</div>
+                    <div id="close" class="item"><i class="lock icon"></i> 全部暂停</div>
+                    <div id="delete" class="item"><i class="delete icon"></i> 全部删除</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="ui mini modal">
@@ -155,9 +160,6 @@
             </div>
         </div>
         <div class="actions">
-            <div class="ui primary deny button">
-                确认
-            </div>
         </div>
     </div>
 </div>

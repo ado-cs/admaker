@@ -2,7 +2,7 @@ package we.lcx.admaker.common;
 
 import lombok.Data;
 import org.springframework.http.HttpMethod;
-import we.lcx.admaker.utils.WordsTool;
+import we.lcx.admaker.utils.CommonUtil;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +32,7 @@ public class Task {
     }
 
     public Task cookie(String cookie) {
-        this.cookie = WordsTool.toList(cookie);
+        this.cookie = CommonUtil.toList(cookie);
         return this;
     }
 

@@ -11,8 +11,11 @@ public class NewAds {
     private String traceId;
     private Integer dspId;
     private Integer flight;
+    private String flightName;
+    private String flightType;
     private Integer type;
     private Integer amount;
+    private Integer realAmount;
     private Integer deal;
     private Integer fee;
     private Integer flow;

@@ -1,7 +1,16 @@
-function msgBox(title, content) {
+function msgBox(title, content, approve, deny) {
     $('.modal .header').html(title);
     $('.modal .description').html('<p>' + content + '</p>');
-    $('.modal').modal('show')
+    $('.modal .actions').html(approve && deny ? '<div class="ui negative deny button">取消</div>' +
+        '<button class="ui positive approve right labeled icon button"><i class="check icon"></i>重试</button>' :
+        '<div class="ui primary deny button">确认</div>');
+    let modal = $('.modal');
+    if (approve && deny)
+        modal.modal({
+            onDeny: deny,
+            onApprove: approve
+        });
+    modal.modal('show')
 }
 
 function parseDate(date, connector) {
@@ -65,12 +74,18 @@ function setDisabled(names, flag) {
         if (flag) {
             p.addClass('disabled');
             p.prev().attr('style', 'color: rgba(34, 36, 38, 0.15)')
-        }
-        else {
+        } else {
             p.removeClass('disabled');
             p.prev().removeAttr('style')
         }
     }
+}
+
+function contains(array, val) {
+    for (let v of array) {
+        if (v == val) return true;
+    }
+    return false;
 }
 
 function composeData() {
@@ -81,16 +96,36 @@ function composeData() {
             data[name] = $(this).val()
         }
     });
+    data.flightType = divide(data.flight, true);
     data.flight = divide(data.flight);
-    if (!data.flight) { msgBox('提示', '请选择广告位'); return false }
-    if (!data.type) { msgBox('提示', '请选择广告类型'); return false }
+    if (!data.flight) {
+        msgBox('提示', '请选择广告位');
+        return false
+    }
+    if (!data.type) {
+        msgBox('提示', '请选择广告类型');
+        return false
+    }
     let amount = parseInt(data.amount);
-    if (isNaN(amount) || amount < 1) { msgBox('提示', '请输入正确的广告数量'); return false }
-
+    if (isNaN(amount) || amount < 1) {
+        msgBox('提示', '请输入正确的广告数量');
+        return false
+    }
+    data.flightName = $('input[name="flight"]').nextAll('.text').html();
     if (!data.deal) data.deal = 1;
     if (!data.dspId) data.dspId = 10101;
     if (!data.fee) data.fee = parseInt(data.type) === 1 && parseInt(data.deal) === 2 ? 2 : 1;
     if (!data.flow) data.flow = 1;
+    if (parseInt(data.fee) === 1 && amount > 1) {
+        if (amount === 2 && contains([1, 4, 6, 9, 10], data.flow)) data.flow = 2;
+        else if (amount === 3 && !contains([3, 5, 7], data.flow)) data.flow = 3;
+        else if (amount === 4 && !contains([5, 7], data.flow)) data.flow = 5;
+        else if (amount === 5 && !contains([7], data.flow)) data.flow = 7;
+        else {
+            msgBox('提示', '广告数量与CPT流量冲突');
+            return false
+        }
+    }
     if (!data.category) data.category = 1;
     if (!data.showNumber || isNaN(parseInt(data.showNumber)) || parseInt(data.showNumber) < 10 || parseInt(data.showNumber) > 99999) data.showNumber = 10000;
     if (!data.showRadio || isNaN(parseInt(data.showRadio)) || parseInt(data.showRadio) <= 0 || parseInt(data.showRadio) > 100) data.showRadio = 0.4;
@@ -98,16 +133,16 @@ function composeData() {
     let date = new Date();
     if (!data.name) data.name = '压测' + parseDate(date);
     if (!data.begin) data.begin = parseDate(date, '-');
-    if (!data.end) {
-        date = new Date(date.begin);
-        date.setDate(date.getDate() + 7);
-        data.end = parseDate(date, '-');
+    if (!data.end) data.end = data.begin;
+    if (compareDate(data.begin, data.end) > 0) {
+        msgBox('提示', '结束时间不能开始时间之前');
+        return false
     }
-    if (compareDate(data.begin, data.end) > 0) { msgBox('提示', '结束时间不能开始时间之前'); return false }
     return data
 }
 
-function selectionChanged(self) {
+function selectionChanged() {
+    let self = $(this);
     const names = {'flight': 'type', 'type': 'fee', 'deal': 'fee'};
     let name = self.attr('name');
     let sel = self.val();
@@ -123,30 +158,24 @@ function selectionChanged(self) {
         if (v === '1' || v === '3') opt.push({name: '合约', value: 1});
         if (v === '2' || v === '3') opt.push({name: '竞价', value: 2});
         fillOptions('type', opt)
-    }
-    else if (name === 'type') {
-        if (val === '1') val = '';
+    } else if (name === 'type') {
         if (sel === '1') {
             setDisabled('deal', false);
             fillOptions('fee', ['CPT', 'CPM'])
-        }
-        else {
+        } else {
             setDisabled('deal', true);
             fillOptions('fee', ['CPC', 'CPM'])
         }
-    }
-    else if (name === 'deal') {
+        val = '';
+    } else if (name === 'deal') {
         if (sel === '1') {
             fillOptions('fee', ['CPT', 'CPM'])
-        }
-        else if (sel === '2') {
+        } else if (sel === '2') {
             fillOptions('fee', ['CPT'])
-        }
-        else  {
+        } else {
             fillOptions('fee', [{name: 'CPM', value: 2}])
         }
-    }
-    else if (name === 'fee') {
+    } else if (name === 'fee') {
         if ($('input[name="type"]').val() === '1') {
             setDisabled('flow', sel !== '1');
             setDisabled(['category', 'showNumber', 'showRadio'], false);
@@ -157,22 +186,16 @@ function selectionChanged(self) {
                 p.val('');
                 p.attr('name', 'showRadio');
                 p.attr('placeholder', '轮播比例')
-            }
-            else {
+            } else {
                 $('#show label').html('每日展示数量');
                 $('#show .ui.input .ui.label').html('CPM');
                 p.val('');
                 p.attr('name', 'showNumber');
                 p.attr('placeholder', '展示数量')
             }
-        }
-        else {
+        } else {
             setDisabled(['flow', 'category', 'showNumber', 'showRadio'], true);
         }
-
-    }
-    else if (name === "begin") {
-        $('input[name="end"]').val(sel);
     }
 
     if (next != null) {
@@ -180,17 +203,21 @@ function selectionChanged(self) {
     }
 }
 
+let traceId = "";
+
 function initEvents() {
     $.fn.api.settings.api = {
         'create': '/j/create',
-        'query' : '/j/flight/{query}'
+        'query': '/j/flight/{query}',
+        'cancel': '/j/cancel'
     };
     $('.ui.selection.dropdown').dropdown();
-    for (let t of ['flight', 'type', 'deal', 'fee']) {
-        $(format('input[name="{}"]', t)).bind('change', function () {
-            selectionChanged($(this))
-        });
-    }
+    $('.ui.dropdown.button').dropdown();
+    for (let t of ['flight', 'type', 'deal', 'fee'])
+        $(format('input[name="{}"]', t)).bind('change', selectionChanged);
+    $('input[name="begin"]').bind('change', function () {
+        $('input[name="end"]').val($(this).val());
+    });
     $('#settings').bind('click', function () {
         let p = $('#more');
         if (p.hasClass('in')) return;
@@ -198,8 +225,7 @@ function initEvents() {
         if (s.hasClass('up')) {
             s.removeClass('up');
             s.addClass('down')
-        }
-        else {
+        } else {
             s.removeClass('down');
             s.addClass('up')
         }
@@ -232,15 +258,30 @@ function initEvents() {
         beforeSend: function (settings) {
             let data = composeData();
             if (!data) return false;
+            if (traceId) data.traceId = traceId;
             settings.data = data;
             $('#create').addClass('loading');
             return settings;
         },
         onResponse: function (response) {
             $('#create').removeClass('loading');
+            traceId = "";
             if (response) {
                 if (response.success) msgBox('创建成功', '广告单创建成功！');
-                else msgBox('创建失败', response.message);
+                else {
+                    traceId = response.results;
+                    msgBox('创建失败', response.message, function () {
+                            $('#create').click()
+                        }, function () {
+                            $(document).api({
+                                on: 'now',
+                                action: 'cancel',
+                                method: 'post',
+                                data: {traceId}
+                            })
+                        }
+                    );
+                }
             } else msgBox('创建失败', '无响应！');
             return response;
         },
@@ -255,7 +296,6 @@ function initData() {
     let date = new Date();
     $('input[name="name"]').val('压测' + parseDate(date));
     $('input[name="begin"]').val(parseDate(date, '-'));
-    date.setDate(date.getDate() + 7);
     $('input[name="end"]').val(parseDate(date, '-'));
 }
 

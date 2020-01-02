@@ -12,18 +12,17 @@ public interface URLs {
     String YUNYING_FLIGHT = "adConfig/queryList";
     String YUNYING_STATUS = "adConfig/changAdFlightAccessStatus";
 
-    String MAISUI_PLAN = "adPlan/create";
     String MAISUI_PRICE = "campaignPackage/getAdvisedPrice";
     String MAISUI_CREATE = "adform/create";
-    String MAISUI_PACKAGES = "campaignPackage/query/list";
     String MAISUI_CREATIVE_QUERY = "adform/query/info";
-
 
     String MAITIAN_RESOURCE = "resource/list";
     String MAITIAN_RESOURCE_NEW = "resource/create";
+    String MAITIAN_ITEM_LIST = "resource/single";
     String MAITIAN_ITEM = "resource/item/create";
     String MAITIAN_REVENUE = "resource/revenue/create";
     String MAITIAN_RESERVE = "reserve/create";
+    String MAITIAN_DEAL_LIST = "schedule/page";
     String MAITIAN_DEAL = "schedule/create";
     String MAITIAN_QUERY = "schedule/item/getReserveResourceItem";
     String MAITIAN_DEAL_ITEM = "schedule/item/create";

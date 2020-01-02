@@ -49,8 +49,8 @@ public class TaskResult {
 
     public TaskResult valid(String message) {
         if (success) return this;
-        if (error != null) message += ": " + error;
-        throw new RuntimeException(message);
+        log.error(String.valueOf(error));
+        throw new VisibleException(message);
     }
 
     public HttpHeaders getHeaders() { return headers; }

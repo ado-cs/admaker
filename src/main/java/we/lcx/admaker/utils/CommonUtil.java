@@ -1,6 +1,7 @@
 package we.lcx.admaker.utils;
 
 import org.springframework.util.CollectionUtils;
+import we.lcx.admaker.common.VisibleException;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -8,9 +9,8 @@ import java.util.*;
 /**
  * Created by LinChenxiao on 2019/12/12 19:29
  **/
-public class WordsTool {
-    private static final SimpleDateFormat FORMAT1 = new SimpleDateFormat("yyyyMMdd");
-    private static final SimpleDateFormat FORMAT2 = new SimpleDateFormat("yyyy-MM-dd");
+public class CommonUtil {
+    private static final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
     public static boolean notSingle(Collection... lists) {
         for (Collection v : lists) {
@@ -62,19 +62,15 @@ public class WordsTool {
         return str.substring(0, 1).toLowerCase() + str.substring(1);
     }
 
-    public static String getNowDate() {
-        return FORMAT1.format(new Date());
-    }
-
     public static String parseDateString(String date) {
         return date + "T00:00:00.000Z";
     }
 
     public static Date parseDate(String date) {
         try {
-            return FORMAT2.parse(date);
+            return FORMAT.parse(date);
         } catch (Exception e) {
-            throw new RuntimeException("时间文本格式错误");
+            throw new VisibleException("时间文本格式错误");
         }
     }
 

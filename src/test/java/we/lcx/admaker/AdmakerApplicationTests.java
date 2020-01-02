@@ -2,9 +2,8 @@ package we.lcx.admaker;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import we.lcx.admaker.common.enums.BiddingMode;
-import we.lcx.admaker.service.Basic;
-import we.lcx.admaker.service.impl.MaiSui;
+import we.lcx.admaker.service.BasicService;
+import we.lcx.admaker.service.BiddingService;
 
 import javax.annotation.Resource;
 
@@ -12,10 +11,10 @@ import javax.annotation.Resource;
 class AdmakerApplicationTests {
 
     @Resource
-    private Basic basic;
+    private BasicService basicService;
 
     @Resource
-    private MaiSui maiSui;
+    private BiddingService biddingService;
 
     @Test
     void contextLoads() {

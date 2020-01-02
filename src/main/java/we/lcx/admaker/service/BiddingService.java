@@ -1,9 +1,8 @@
-package we.lcx.admaker.service.impl;
+package we.lcx.admaker.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 import we.lcx.admaker.common.Entity;
 import we.lcx.admaker.common.Result;
 import we.lcx.admaker.common.Task;
@@ -17,12 +16,10 @@ import we.lcx.admaker.common.consts.Settings;
 import we.lcx.admaker.common.consts.URLs;
 import we.lcx.admaker.common.enums.BiddingMode;
 import we.lcx.admaker.common.enums.ShowType;
-import we.lcx.admaker.service.AdCreateService;
-import we.lcx.admaker.service.Basic;
 import we.lcx.admaker.service.aop.Trace;
 import we.lcx.admaker.service.aop.TraceAop;
 import we.lcx.admaker.utils.HttpExecutor;
-import we.lcx.admaker.utils.WordsTool;
+import we.lcx.admaker.utils.CommonUtil;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -34,18 +31,15 @@ import java.util.Set;
  **/
 @Slf4j
 @Service
-public class MaiSui implements AdCreateService {
+public class BiddingService {
     @Resource
-    private Basic basic;
+    private BasicService basicService;
 
     @Value("${ad.url.maisui}")
     private String URL;
 
     @Value("${ad.maisui.adPlanId}")
     private String PLAN_ID;
-
-    @Resource
-    private TraceAop traceAop;
 
     //单位分，bidAmountMin和bidAmountMax单位为元
     private String getPrice(String planId, Integer uid, BiddingMode mode) {
@@ -58,18 +52,18 @@ public class MaiSui implements AdCreateService {
     }
 
     @Trace
-    private Entity composeEntity(NewAds ads) {
-        basic.checkFlight(ads.getFlight());
-        Ad ad = basic.getAdFlight(ads.getFlight());
+    public Entity composeEntity(NewAds ads) {
+        basicService.checkFlight(ads.getFlight());
+        Ad ad = basicService.getAdFlight(ads);
         Entity entity = Entity.of(Params.MAISUI_CREATE);
         entity.put("adPlanId", PLAN_ID)
-                //.put("adformName", ads.getName() + "_" + var4 + WordsTool.randomSuffix(4))
+                .put("adformName", ad.getFlightName())
                 .put("campaignPackageId", ad.getPositionId())
                 .put("bidAmountMin", "100")
                 .put("bidAmountMax", "100")
                 .put("billingMode", ads.getBiddingMode().getValue())
-                .put("beginDate", WordsTool.parseDateString(ads.getBegin()))
-                .put("endDate", WordsTool.parseDateString(ads.getEnd()))
+                .put("beginDate", CommonUtil.parseDateString(ads.getBegin()))
+                .put("endDate", CommonUtil.parseDateString(ads.getEnd()))
                 .cd("adCreativeList[0]").newList("materialList")
                 .put("templateRefId", ad.getRefId())
                 .put("materialName", null)
@@ -78,7 +72,7 @@ public class MaiSui implements AdCreateService {
                 .put("mainShowType", ad.getMainType().getCode());
         for (Unit unit : ad.getUnits()) {
             if (unit.getType() == ShowType.TEXT) {
-                entity.put(unit.getName(), WordsTool.repeat(unit.getLimit()));
+                entity.put(unit.getName(), CommonUtil.repeat(unit.getLimit()));
             }
         }
         entity.newList("resUrlDetailList");
@@ -97,36 +91,5 @@ public class MaiSui implements AdCreateService {
             }
         }
         return entity;
-    }
-
-    @Override
-    public Result createAd(NewAds ads) {
-        Entity entity = composeEntity(ads);
-        List<Task> tasks = new ArrayList<>();
-        for (int i = 0; i < ads.getAmount(); i++) {
-            tasks.add(Task.post(URL + URLs.MAISUI_CREATE)
-                    .param(entity.copy().put("adformName", ads.getName() + WordsTool.randomSuffix(6))));
-        }
-        Set<Integer> adIds = new HashSet<>();
-        for (TaskResult result : HttpExecutor.execute(tasks)) {
-            if (result.isSuccess())
-                adIds.add((Integer) result.getEntity().get("result"));
-        }
-        traceAop.done(ads.getTraceId(), adIds);
-        return Result.ok(adIds);
-    }
-
-    @Override
-    public void cancel(String traceId) {
-        List ids = new ArrayList<>(traceAop.cancel(traceId));
-        ModifyAd modifyAd = new ModifyAd();
-        modifyAd.setIds(ids);
-        modifyAd.setState(-1);
-        modify(modifyAd);
-    }
-
-    @Override
-    public void modify(ModifyAd modifyAd) {
-        //TODO
     }
 }

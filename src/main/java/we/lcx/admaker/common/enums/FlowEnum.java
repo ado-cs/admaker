@@ -29,6 +29,10 @@ public enum FlowEnum {
         return null;
     }
 
+    public int getCode() {
+        return code;
+    }
+
     public String getValue() {
         return value;
     }

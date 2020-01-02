@@ -2,7 +2,9 @@ package we.lcx.admaker.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import we.lcx.admaker.common.entities.Flight;
 import we.lcx.admaker.common.entities.NewAds;
 import we.lcx.admaker.common.json.*;
@@ -16,7 +18,7 @@ import we.lcx.admaker.common.consts.URLs;
 import we.lcx.admaker.common.enums.ShowType;
 import we.lcx.admaker.service.aop.Trace;
 import we.lcx.admaker.utils.HttpExecutor;
-import we.lcx.admaker.utils.WordsTool;
+import we.lcx.admaker.utils.CommonUtil;
 import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,7 +28,10 @@ import java.util.concurrent.ConcurrentHashMap;
  **/
 @Slf4j
 @Service
-public class Basic {
+public class BasicService {
+    @Value("${ad.common.account}")
+    private String ACCOUNT;
+
     @Value("${ad.url.maisui}")
     private String URL_MAISUI;
 
@@ -44,10 +49,23 @@ public class Basic {
 
     private Map<Integer, Ad> ads = new HashMap<>();
 
-    private volatile ConcurrentHashMap<Integer, Flight> flights = new ConcurrentHashMap<>();
     private volatile boolean processing;
 
+    private String cookie;
+
     @PostConstruct
+    private void login() {
+        List<String> list = HttpExecutor.doRequest(Task.get(URL_MAITIAN + "mock?user=" + ACCOUNT)).valid("麦田登录失败")
+                .getHeaders().get(HttpHeaders.SET_COOKIE);
+        if (!CollectionUtils.isEmpty(list)) cookie = list.get(0);
+        else log.error("麦田cookie无效");
+        initAds();
+    }
+
+    public String getCookie() {
+        return cookie;
+    }
+
     private void initAds() {
         if (processing) return;
         synchronized (this) {
@@ -56,13 +74,13 @@ public class Basic {
         }
         try {
             Map<Integer, Ad> map = new HashMap<>();
-            for (AdPosition position : HttpExecutor.doRequest(Task.post(URLs.YUNYING_POSITIONS).param(Entity.of(Params.YUNYING_POSITION)))
+            for (AdPosition position : HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_POSITIONS).param(Entity.of(Params.YUNYING_POSITION)))
                     .valid("获取版位失败").getEntity().toList(AdPosition.class)) {
                 if (position == null || !Objects.equals(position.getStatus(), 201) ||
-                        Objects.equals(position.getPositionType(), 0) || //todo checkPositionType
-                        WordsTool.notSingle(position.getFlightIds(), position.getTemplateIds()) ||
-                        WordsTool.notContains(position.getGroupIds(), GROUP_ID) ||
-                        WordsTool.notContains(position.getProductTypes(), 101))
+                        Objects.equals(position.getPositionType(), 0) ||
+                        CommonUtil.notSingle(position.getFlightIds(), position.getTemplateIds()) ||
+                        CommonUtil.notContains(position.getGroupIds(), GROUP_ID) ||
+                        CommonUtil.notContains(position.getProductTypes(), 101))
                     continue;
                 Ad ad = new Ad();
                 ad.setFlightId(position.getFlightIds().get(0));
@@ -89,11 +107,11 @@ public class Basic {
                         AdUnit adUnit = v.to(AdUnit.class);
                         Unit unit = new Unit();
                         unit.setId(adUnit.getUid());
-                        unit.setName(adUnit.getName());
+                        unit.setName(CommonUtil.convertName(adUnit.getName()));
                         unit.setOrderId(adUnit.getOrderId());
                         unit.setType(adUnit.getType());
                         unit.setLimit(adUnit.getType() == ShowType.TEXT ?
-                                WordsTool.getLimitLength(adUnit.getLowerLength(), adUnit.getLength()) : adUnit.getSize());
+                                CommonUtil.getLimitLength(adUnit.getLowerLength(), adUnit.getLength()) : adUnit.getSize());
                         units.add(unit);
                     });
                 });
@@ -118,34 +136,32 @@ public class Basic {
                 results.add(item);
                 item.put("name", rec.getName());
                 item.put("value", rec.getId() + "_" + rec.getAdType());
-                flights.put(rec.getId(), new Flight(rec.getName(), rec.getAdType()));
             }
         }
         return results;
     }
 
-    public Ad getAdFlight(Integer id) {
-        Ad ad = ads.get(id);
+    public Ad getAdFlight(NewAds newAds) {
+        Ad ad = ads.get(newAds.getFlight());
         if (ad != null) return ad;
         Entity entity = Entity.of(Params.YUNYING_CREATE);
         HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_TEMPLATES)
-                .param(Entity.of(Params.COMMON_QUERY).put("flightId", id)))
+                .param(Entity.of(Params.COMMON_QUERY).put("flightId", newAds.getFlight())))
                 .valid("获取模板单元失败")
                 .getEntity().cd("result").each(t -> {
             String s = String.valueOf(t.get("mainShowType"));
             if ("PICTURE".equals(s) || "TEXT".equals(s)) {
-                entity.put("templateUidList", WordsTool.toList(t.get("id")));
+                entity.put("templateUidList", CommonUtil.toList(t.get("id")));
                 return true;
             }
             return false;
         });
-        Flight flight = flights.get(id);
         HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_CREATE)
-                .param(entity.put("name", flight.getName() + WordsTool.randomSuffix(4))
-                        .put("flightUidList", WordsTool.toList(id))
-                        .put("adType", String.valueOf(flight.getType())))).valid("创建广告版位失败");
+                .param(entity.put("name", newAds.getFlightName() + CommonUtil.randomSuffix(4))
+                        .put("flightUidList", CommonUtil.toList(newAds.getFlight()))
+                        .put("adType", newAds.getFlightType()))).valid("创建广告版位失败");
         initAds();
-        while ((ad = ads.get(id)) == null)
+        while ((ad = ads.get(newAds.getFlight())) == null)
             initAds();
         return ad;
     }
@@ -158,7 +174,6 @@ public class Basic {
                 .valid("运营平台开启广告位失败");
     }
 
-    @Trace(approve = true)
     public Set<Integer> approveAds(NewAds ads, Set<Integer> adIds) {
         String url;
         String param;
@@ -166,13 +181,15 @@ public class Basic {
             url = URL_MAITIAN + URLs.MAITIAN_CREATIVE_QUERY;
             param = Params.MAITIAN_CREATIVE_QUERY;
         } else {
-            url = URL_MAISUI + URLs.MAITIAN_CREATIVE_QUERY;
-            param = Params.MAITIAN_CREATIVE_QUERY;
+            url = URL_MAISUI + URLs.MAISUI_CREATIVE_QUERY;
+            param = Params.MAISUI_CREATIVE_QUERY;
         }
         List<Task> tasks = new ArrayList<>();
         Set<Integer> failed = new HashSet<>();
         for (Integer id : adIds) {
-            TaskResult result = HttpExecutor.doRequest(Task.post(url).param(Entity.of(param)
+            Task task = Task.post(url);
+            if (ads.getType() == 1) task.cookie(cookie);
+            TaskResult result = HttpExecutor.doRequest(task.param(Entity.of(param)
                     .put(ads.getType() == 1 ? "uid" : "adformId", id)));
             if (!result.isSuccess()) {
                 failed.add(id);
