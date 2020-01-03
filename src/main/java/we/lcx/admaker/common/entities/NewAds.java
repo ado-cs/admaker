@@ -8,19 +8,15 @@ import we.lcx.admaker.common.enums.*;
  **/
 @Data
 public class NewAds {
-    private String traceId;
-    private Integer dspId;
-    private Integer flight;
+    private Integer flightId;
     private String flightName;
     private String flightType;
     private Integer type;
     private Integer amount;
-    private Integer realAmount;
     private Integer deal;
     private Integer fee;
     private Integer flow;
-    private Integer category;
-    private String name;
+    private Integer dspId;
     private String begin;
     private String end;
     private Integer showNumber;
@@ -30,13 +26,11 @@ public class NewAds {
     private BiddingMode biddingMode;
     private ContractMode contractMode;
     private FlowEnum flowEnum;
-    private CategoryEnum categoryEnum;
 
     public void convert() {
         dealMode = DealMode.of(deal);
         biddingMode = BiddingMode.of(fee);
         contractMode = ContractMode.of(fee);
         flowEnum = FlowEnum.of(flow);
-        categoryEnum = CategoryEnum.of(category);
     }
 }

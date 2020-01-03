@@ -16,15 +16,11 @@ import we.lcx.admaker.common.entities.NewAds;
 import we.lcx.admaker.common.entities.Pair;
 import we.lcx.admaker.manager.AdManager;
 import we.lcx.admaker.service.BasicService;
-import we.lcx.admaker.service.ContractService;
-import we.lcx.admaker.service.aop.TraceAop;
+import we.lcx.admaker.service.ContractCreate;
 import we.lcx.admaker.utils.CommonUtil;
 import we.lcx.admaker.utils.HttpExecutor;
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by LinChenxiao on 2020/01/02 17:14
@@ -35,10 +31,7 @@ public class ContractManager implements AdManager {
     private BasicService basicService;
 
     @Resource
-    private ContractService contractService;
-
-    @Resource
-    private TraceAop traceAop;
+    private ContractCreate contractCreate;
 
     @Value("${ad.url.maitian}")
     private String URL;
@@ -50,67 +43,65 @@ public class ContractManager implements AdManager {
     public Result create(NewAds ads) {
         ContractLog tag = new ContractLog();
         tag.setAd(basicService.getAdFlight(ads));
-        tag.setCreative(contractService.buildCreative(ads, tag));
-        tag.setResourceId(contractService.createResource(ads, tag));
-        tag.setResourceItemId(contractService.createItem(ads, tag));
-        tag.setRevenueId(contractService.createRevenue(ads, tag));
-        tag.setDealId(contractService.createDeal(ads, tag));
+        tag.setCreative(contractCreate.buildCreative(tag));
+        tag.setResourceId(contractCreate.createResource(tag));
+        tag.setResourceItemId(contractCreate.createItem(ads, tag));
+        tag.setRevenueId(contractCreate.createRevenue(tag));
+        tag.setDealId(contractCreate.createDeal(ads, tag));
         List<Task> tasks = new ArrayList<>();
-        for (int i = 0; i < ads.getRealAmount(); i++) {
+        Set<Pair<Integer, Integer>> created = new HashSet<>();
+        for (int i = 0; i < ads.getAmount(); i++) {
             Pair<Integer, Integer> pair = new Pair<>();
-            tag.setReservationId(contractService.createReservation(ads, tag));
-            pair.setKey(tag.getReservationId());
-            tag.setDealItemId(contractService.createDealItem(ads, tag));
-            pair.setValue(tag.getDealItemId());
+            try {
+                tag.setReservationId(contractCreate.createReservation(ads, tag));
+                pair.setKey(tag.getReservationId());
+                created.add(pair);
+                tag.setDealItemId(contractCreate.createDealItem(ads, tag));
+                pair.setValue(tag.getDealItemId());
+            }
+            catch (Exception e) {
+                cancel(created);
+                throw e;
+            }
             if (!DSP_ID.equals(ads.getDspId())) continue;
             Entity entity = Entity.of(Params.MAITIAN_CREATE);
-            entity.put("name", ads.getName() + CommonUtil.randomSuffix(4))
-                    .put("execPeriods", CommonUtil.toList(CommonUtil.parseTime(ads.getBegin()), CommonUtil.parseTime(ads.getEnd()) + Settings.DAY - 1))
+            entity.put("name", ads.getFlightName() + "_" + ads.getDealMode().name() + "_" + ads.getContractMode().name()
+                    + "_" + Settings.SPECIAL_NAME + CommonUtil.randomSuffix(4))
+                    .put("execPeriods", Arrays.asList(CommonUtil.parseTime(ads.getBegin()), CommonUtil.parseTime(ads.getEnd()) + Settings.DAY - 1))
                     .put("creatives", tag.getCreative())
                     .cd("scheduleItemInfo")
                     .put("positionId", String.valueOf(tag.getAd().getPositionId()))
                     .put("scheduleId", tag.getDealId())
                     .put("scheduleItemId", tag.getDealItemId());
-            tasks.add(Task.post(URL + URLs.MAITIAN_CREATE).cookie(basicService.getCookie()).param(entity).tag(pair));
+            tasks.add(Task.post(URL + URLs.MAITIAN_CREATE).cookie(basicService.getCookie()).param(entity));
         }
         if (!DSP_ID.equals(ads.getDspId())) return Result.ok();
         Set<Integer> adIds = new HashSet<>();
         for (TaskResult result : HttpExecutor.execute(tasks)) {
             if (result.isSuccess()) {
                 adIds.add((Integer) result.getEntity().get("result"));
-                Pair pair = (Pair) result.getTag();
-                traceAop.use(ads.getTraceId(), "reservation", pair.getKey());
-                traceAop.use(ads.getTraceId(), "dealItem", pair.getValue());
+            }
+            else {
+                cancel(created);
+                return Result.fail("创建失败，请查看日志！");
             }
         }
-        return Result.ok(adIds);
+        return basicService.approveAds(ads, adIds) ? Result.ok() : Result.fail("创建失败，请查看日志！");
     }
 
-    @Override
-    public Result cancel(String traceId) {
-        NewAds ads = traceAop.getAd(traceId);
+    private void cancel(Set<Pair<Integer, Integer>> created) {
         List<Integer> dealItems = new ArrayList<>();
-        int id = -1;
-        boolean even = false;
-        for (Object v : traceAop.cancel(traceId)) {
-            if (even) dealItems.add((Integer) v);
-            else id = (int) v;
-            even = !even;
+        for (Pair<Integer, Integer> v : created) {
+            if (v.getValue() != null) dealItems.add(v.getValue());
+            else if (v.getKey() != null) contractCreate.deleteReservation(v.getKey());
         }
-        if (even) contractService.deleteReservation(id);
-        if (CollectionUtils.isEmpty(dealItems)) return Result.ok();
-        ModifyAd modifyAd = new ModifyAd();
-        modifyAd.setFlightName(ads.getFlightName());
-        modifyAd.setCategoryEnum(ads.getCategoryEnum());
-        modifyAd.setContractMode(ads.getContractMode());
-        modifyAd.setDealMode(ads.getDealMode());
-        modifyAd.setState(-1);
-        return contractService.modify(modifyAd, dealItems);
+        if (CollectionUtils.isEmpty(dealItems)) return;
+        //todo: delete deal items
     }
 
     @Override
     public Result modify(ModifyAd modifyAd) {
         modifyAd.convert();
-        return contractService.modify(modifyAd);
+        return contractCreate.modify(modifyAd);
     }
 }

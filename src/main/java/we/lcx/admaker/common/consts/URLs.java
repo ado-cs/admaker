@@ -15,6 +15,7 @@ public interface URLs {
     String MAISUI_PRICE = "campaignPackage/getAdvisedPrice";
     String MAISUI_CREATE = "adform/create";
     String MAISUI_CREATIVE_QUERY = "adform/query/info";
+    String MAISUI_OPEN = "adform/update/serve";
 
     String MAITIAN_RESOURCE = "resource/list";
     String MAITIAN_RESOURCE_NEW = "resource/create";

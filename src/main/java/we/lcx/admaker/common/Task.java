@@ -3,6 +3,8 @@ package we.lcx.admaker.common;
 import lombok.Data;
 import org.springframework.http.HttpMethod;
 import we.lcx.admaker.utils.CommonUtil;
+
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +34,7 @@ public class Task {
     }
 
     public Task cookie(String cookie) {
-        this.cookie = CommonUtil.toList(cookie);
+        this.cookie = Arrays.asList(cookie);
         return this;
     }
 

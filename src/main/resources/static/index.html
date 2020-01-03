@@ -13,7 +13,7 @@
             <div class="required eight wide field">
                 <label>广告位</label>
                 <div class="ui compact search selection dropdown">
-                    <input type="hidden" name="flight">
+                    <input type="hidden" name="flightId">
                     <i class="dropdown icon"></i>
                     <div class="default text">广告位</div>
                     <div class="menu">
@@ -102,35 +102,16 @@
 
             <div class="fields">
                 <div class="eight wide field">
-                    <label>广告名称前缀</label>
-                    <input type="text" name="name" placeholder="广告名称前缀">
-                </div>
-
-                <div class="four wide field">
                     <label>DspID</label>
                     <input type="text" name="dspId" placeholder="DspID" value="10101">
                 </div>
 
                 <div class="four wide field">
-                    <label>排期类别</label>
-                    <div class="ui compact selection dropdown">
-                        <input type="hidden" name="category" value="1">
-                        <i class="dropdown icon"></i>
-                        <div class="default text">排期类别</div>
-                        <div class="menu">
-                            <div class="active item" data-value="1">普通广告</div>
-                            <div class="item" data-value="2">运营广告</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="two fields">
-                <div class="field">
                     <label>起始时间</label>
                     <input type="date" name="begin">
                 </div>
 
-                <div class="field">
+                <div class="four wide field">
                     <label>结束时间</label>
                     <input type="date" name="end">
                 </div>

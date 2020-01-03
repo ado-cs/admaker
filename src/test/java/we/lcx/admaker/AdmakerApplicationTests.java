@@ -3,7 +3,7 @@ package we.lcx.admaker;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import we.lcx.admaker.service.BasicService;
-import we.lcx.admaker.service.BiddingService;
+import we.lcx.admaker.service.BiddingCreate;
 
 import javax.annotation.Resource;
 
@@ -14,7 +14,7 @@ class AdmakerApplicationTests {
     private BasicService basicService;
 
     @Resource
-    private BiddingService biddingService;
+    private BiddingCreate biddingCreate;
 
     @Test
     void contextLoads() {

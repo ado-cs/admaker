@@ -2,7 +2,6 @@ package we.lcx.admaker.utils;
 
 import org.springframework.util.CollectionUtils;
 import we.lcx.admaker.common.VisibleException;
-
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -27,16 +26,8 @@ public class CommonUtil {
         return CollectionUtils.isEmpty(list) || !list.contains(value);
     }
 
-    public static List toList(Object... obj) {
-        return Arrays.asList(obj);
-    }
-
-    public static String generateId() {
-        return UUID.randomUUID().toString().replace("-", "");
-    }
-
     public static String randomSuffix(int length) {
-        String s = generateId();
+        String s = UUID.randomUUID().toString().replace("-", "");
         return "_" + (s.length() <= length ? s : s.substring(0, length));
     }
 
@@ -66,16 +57,32 @@ public class CommonUtil {
         return str.substring(0, 1).toLowerCase() + str.substring(1);
     }
 
+    public static String[] splitName(String str, String splitStr, int length, int ignoreTail) {
+        String[] s = str.split(splitStr);
+        if (s.length < length + ignoreTail) return s;
+        String[] ns = new String[length];
+        for (int i = length - 1, j = s.length - ignoreTail - 1; j >= 0; i--, j--) {
+            if (i < 0) ns[0] = s[j] + ns[0];
+            else ns[i] = s[j];
+        }
+        return ns;
+    }
+
     public static String parseDateString(String date) {
         return date + "T00:00:00.000Z";
     }
 
-    public static Date parseDate(String date) {
+    private static Date parseDate(String date) {
         try {
             return FORMAT.parse(date);
         } catch (Exception e) {
             throw new VisibleException("时间文本格式错误");
         }
+    }
+
+    public static long timeOfToday() {
+        Calendar calendar = Calendar.getInstance();
+        return parseTime(calendar.get(Calendar.YEAR)  + "-" + calendar.get(Calendar.MONTH) + "-" + calendar.get(Calendar.DATE));
     }
 
     public static long parseTime(String date) {

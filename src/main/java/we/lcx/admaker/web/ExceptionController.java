@@ -15,11 +15,11 @@ import javax.servlet.http.HttpServletRequest;
 @RestControllerAdvice
 public class ExceptionController {
     @ExceptionHandler(value = Exception.class)
-    public Result handle(Exception e, HttpServletRequest request) {
+    public Result handle(Exception e) {
         if (!(e instanceof VisibleException)) {
             log.error("e={}, message={}, cause={}", e.getClass(), e.getMessage(), e.getCause());
             if (e.getMessage() == null && e.getCause() == null) e.printStackTrace();
         }
-        return Result.fail(e.getMessage() == null ? "未知错误" : e.getMessage(), request.getAttribute("traceId"));
+        return Result.fail(e.getMessage() == null ? "未知错误" : e.getMessage());
     }
 }

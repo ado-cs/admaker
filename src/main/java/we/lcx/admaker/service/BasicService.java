@@ -15,12 +15,10 @@ import we.lcx.admaker.common.entities.Unit;
 import we.lcx.admaker.common.consts.Params;
 import we.lcx.admaker.common.consts.URLs;
 import we.lcx.admaker.common.enums.ShowType;
-import we.lcx.admaker.service.aop.Trace;
 import we.lcx.admaker.utils.HttpExecutor;
 import we.lcx.admaker.utils.CommonUtil;
 import javax.annotation.PostConstruct;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by LinChenxiao on 2019/12/13 09:54
@@ -141,26 +139,26 @@ public class BasicService {
     }
 
     public Ad getAdFlight(NewAds newAds) {
-        Ad ad = ads.get(newAds.getFlight());
+        Ad ad = ads.get(newAds.getFlightId());
         if (ad != null) return ad;
         Entity entity = Entity.of(Params.YUNYING_CREATE);
         HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_TEMPLATES)
-                .param(Entity.of(Params.COMMON_QUERY).put("flightId", newAds.getFlight())))
+                .param(Entity.of(Params.COMMON_QUERY).put("flightId", newAds.getFlightId())))
                 .valid("获取模板单元失败")
                 .getEntity().cd("result").each(t -> {
             String s = String.valueOf(t.get("mainShowType"));
             if ("PICTURE".equals(s) || "TEXT".equals(s)) {
-                entity.put("templateUidList", CommonUtil.toList(t.get("id")));
+                entity.put("templateUidList", Arrays.asList(t.get("id")));
                 return true;
             }
             return false;
         });
         HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_CREATE)
                 .param(entity.put("name", newAds.getFlightName() + CommonUtil.randomSuffix(4))
-                        .put("flightUidList", CommonUtil.toList(newAds.getFlight()))
+                        .put("flightUidList", Arrays.asList(newAds.getFlightId()))
                         .put("adType", newAds.getFlightType()))).valid("创建广告版位失败");
         initAds();
-        while ((ad = ads.get(newAds.getFlight())) == null)
+        while ((ad = ads.get(newAds.getFlightId())) == null)
             initAds();
         return ad;
     }
@@ -173,7 +171,7 @@ public class BasicService {
                 .valid("运营平台开启广告位失败");
     }
 
-    public Set<Integer> approveAds(NewAds ads, Set<Integer> adIds) {
+    public boolean approveAds(NewAds ads, Set<Integer> adIds) {
         String url;
         String param;
         if (ads.getType() == 1) {
@@ -184,25 +182,21 @@ public class BasicService {
             param = Params.MAISUI_CREATIVE_QUERY;
         }
         List<Task> tasks = new ArrayList<>();
-        Set<Integer> failed = new HashSet<>();
         for (Integer id : adIds) {
             Task task = Task.post(url);
             if (ads.getType() == 1) task.cookie(cookie);
             TaskResult result = HttpExecutor.doRequest(task.param(Entity.of(param)
                     .put(ads.getType() == 1 ? "uid" : "adformId", id)));
-            if (!result.isSuccess()) {
-                failed.add(id);
-                continue;
-            }
+            if (!result.isSuccess()) return false;
             tasks.add(Task.post(URL_MAITIAN + URLs.COMMON_APPROVE).tag(id)
                     .param(Entity.of(Params.COMMON_APPROVE)
                             .put("creativeId", "MAISUI_" + result.getEntity()
                                     .get(ads.getType() == 1 ? "result list id" : "result adCreativeList creativeId"))));
         }
         for (TaskResult r : HttpExecutor.execute(tasks)) {
-            if (!r.isSuccess()) failed.add((Integer) r.getTag());
+            if (!r.isSuccess()) return false;
         }
-        return failed;
+        return true;
     }
 }
 

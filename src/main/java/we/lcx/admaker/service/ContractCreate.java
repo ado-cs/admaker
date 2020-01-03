@@ -3,7 +3,6 @@ package we.lcx.admaker.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import we.lcx.admaker.common.*;
 import we.lcx.admaker.common.consts.Params;
 import we.lcx.admaker.common.consts.Settings;
@@ -11,7 +10,6 @@ import we.lcx.admaker.common.consts.URLs;
 import we.lcx.admaker.common.entities.*;
 import we.lcx.admaker.common.enums.*;
 import we.lcx.admaker.common.json.DealItem;
-import we.lcx.admaker.service.aop.Trace;
 import we.lcx.admaker.utils.HttpExecutor;
 import we.lcx.admaker.utils.CommonUtil;
 import javax.annotation.Resource;
@@ -23,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  **/
 @Slf4j
 @Service
-public class ContractService {
+public class ContractCreate {
 
     @Value("${ad.url.maitian}")
     private String URL;
@@ -31,34 +29,21 @@ public class ContractService {
     @Value("${ad.common.dspId}")
     private Integer DSP_ID;
 
+    @Value("${ad.setting.suffix}")
+    private Integer SUFFIX;
+
     //以下字段需在麦田提前建立对应条目
-
-    @Value("${ad.maitian.customerId}")
-    private Long CUSTOMER_ID; //客户id
-
-    @Value("${ad.maitian.mediaId}")
-    private Integer MEDIA_ID; //资源媒体id
-
-    @Value("${ad.maitian.dealId}")
-    private Integer DEAL_ID; //排期第一个id
-
-    @Value("${ad.maitian.contractId}")
-    private Long CONTRACT_ID; //合同id
-
-    @Value("${ad.maitian.firstIndustry}")
-    private Integer IND1; //第一行业id
-
-    @Value("${ad.maitian.secondIndustry}")
-    private Integer IND2; //第二行业id
-
-    @Value("${ad.maitian.brand}")
-    private Long BRAND; //品牌id
+    private static final long CUSTOMER_ID = 213290621L; //客户id
+    private static final int MEDIA_ID = 5001; //资源媒体id
+    private static final int CONTRACT_ID = 152512; //合同id
+    private static final int IND1 = 3; //第一行业id
+    private static final int IND2 = 10; //第二行业id
+    private static final long BRAND = 2153992469L; //品牌id
     
     @Resource
     private BasicService basicService;
-    
-    @Trace
-    public int createResource(NewAds ads, ContractLog tag) {
+
+    public int createResource(ContractLog tag) {
         TaskResult result = HttpExecutor.doRequest(
                 Task.post(URL + URLs.MAITIAN_RESOURCE)
                         .cookie(basicService.getCookie()).param(Entity.of(Params.MAITIAN_RESOURCE)
@@ -73,7 +58,6 @@ public class ContractService {
                 .valid("创建资源失败").getEntity().get("result");
     }
 
-    @Trace
     public int createItem(NewAds ads, ContractLog tag) {
         final String name = ads.getDealMode().name() + "_" + ads.getContractMode().name()
                 + (ads.getContractMode() == ContractMode.CPT ? "_" + ads.getFlowEnum().getCode() : "");
@@ -100,8 +84,8 @@ public class ContractService {
                         .put("resourceTrafficType", ads.getDealMode().name())
                         .put("billingMode", "BILLING_MODE_" + ads.getContractMode().getValue())
                         .put("resourceTrafficRatio", ads.getContractMode() == ContractMode.CPM ? "ZERO" : ads.getFlowEnum().getValue())
-                        .put("trafficSplitTypes", CommonUtil.toList(ContractMode.CPT.getTraffic(), ContractMode.CPM.getTraffic()))
-                        .put("positionIdList", CommonUtil.toList(String.valueOf(tag.getAd().getPositionId())))
+                        .put("trafficSplitTypes", Arrays.asList(ContractMode.CPT.getTraffic(), ContractMode.CPM.getTraffic()))
+                        .put("positionIdList", Arrays.asList(String.valueOf(tag.getAd().getPositionId())))
                         .cd("positionList[0]")
                         .put("code", String.valueOf(tag.getAd().getPositionId()))
                         .put("value", tag.getAd().getPositionName())))
@@ -109,8 +93,7 @@ public class ContractService {
                 .getEntity().get("result");
     }
 
-    @Trace
-    public int createRevenue(NewAds ads, ContractLog tag) {
+    public int createRevenue(ContractLog tag) {
         if (tag.getRevenueId() != 0) return tag.getRevenueId();
         Date date = new Date();
         return (int) HttpExecutor.doRequest(
@@ -118,14 +101,13 @@ public class ContractService {
                         .cookie(basicService.getCookie()).param(Entity.of(Params.MAITIAN_REVENUE)
                         .put("resourceUid", tag.getResourceId())
                         .put("resourceItemUid", tag.getResourceItemId())
-                        .put("revenueName", CommonUtil.generateId().substring(0, 8))
+                        .put("revenueName", CommonUtil.randomSuffix(8).substring(1))
                         .cd("durationVO")
                         .put("beginTime", date.getTime())))
                 .valid("创建资源条目失败")
                 .getEntity().get("result");
     }
 
-    @Trace(value = "reservation", loop = true)
     public int createReservation(NewAds ads, ContractLog tag) {
         Entity entity = Entity.of(Params.MAITIAN_RESERVE)
                 .put("customerUid", CUSTOMER_ID)
@@ -161,7 +143,7 @@ public class ContractService {
                 Task.post(URL + URLs.MAITIAN_DEAL_LIST)
                         .cookie(basicService.getCookie()).param(Entity.of(Params.COMMON_PAGE).put("scheduleName", name)))
                 .valid("获取排期失败").getEntity().cd("result/list").each(e -> {
-            if (CONTRACT_ID.equals(Long.parseLong(String.valueOf(e.get("contractUid"))))) {
+            if (String.valueOf(CONTRACT_ID).equals(String.valueOf(e.get("contractUid")))) {
                 pair.setKey((int) e.get("uid"));
                 return true;
             }
@@ -170,9 +152,8 @@ public class ContractService {
         return pair.getKey();
     }
 
-    @Trace
     public int createDeal(NewAds ads, ContractLog tag) {
-        String name = ads.getDealMode().name() + ads.getCategoryEnum().getValue();
+        String name = ads.getDealMode().name() + SUFFIX;
         Integer id = getDealId(name);
         if (id != 0) {
             tag.setDealId(id);
@@ -189,13 +170,11 @@ public class ContractService {
                         .put("firstIndustryUid", IND1)
                         .put("secondIndustryUid", IND2)
                         .put("brandUid", BRAND)
-                        .put("productName", CommonUtil.randomSuffix(6))
-                        .put("scheduleCategoryCode", String.valueOf(ads.getCategory()))))
+                        .put("productName", CommonUtil.randomSuffix(6))))
                 .valid("创建排期失败")
                 .getEntity().get("result uid");
     }
 
-    @Trace(value = "dealItem", loop = true)
     public int createDealItem(NewAds ads, ContractLog tag) {
         TaskResult result = HttpExecutor.doRequest(
                 Task.post(URL + URLs.MAITIAN_QUERY)
@@ -206,7 +185,7 @@ public class ContractService {
                 .put("name", tag.getAd().getFlightName() + CommonUtil.randomSuffix(6))
                 .put("scheduleUid", tag.getDealId())
                 .put("reserveItemUid", String.valueOf(tag.getReservationId()))
-                .put("positionUids", CommonUtil.toList(String.valueOf(tag.getAd().getPositionId())))
+                .put("positionUids", Arrays.asList(String.valueOf(tag.getAd().getPositionId())))
                 .put("trafficSplitType", ads.getContractMode().getTraffic())
                 .put("realAmountDaily", ads.getContractMode() == ContractMode.CPM ? String.valueOf(ads.getShowNumber()) : "")
                 .put("realTrafficRatio", ads.getContractMode() == ContractMode.CPT ? ads.getShowRadio() : 0)
@@ -226,8 +205,7 @@ public class ContractService {
                 .getEntity().get("result");
     }
 
-    @Trace
-    public List buildCreative(NewAds ads, ContractLog tag) {
+    public List buildCreative(ContractLog tag) {
         Ad ad = tag.getAd();
         TaskResult result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_TEMPLATE).cookie(basicService.getCookie())
                 .param(Entity.of().put("uid", ad.getPositionId())));
@@ -257,7 +235,7 @@ public class ContractService {
                         .add();
             }
         }
-        return CommonUtil.toList(creative.getHead());
+        return Arrays.asList(creative.getHead());
     }
 
     public boolean deleteReservation(int id) {
@@ -276,7 +254,7 @@ public class ContractService {
     }
 
     public Result modify(ModifyAd modifyAd, List<Integer> dealItemIds) {
-        Integer dealId = getDealId(modifyAd.getDealMode().name() + modifyAd.getCategoryEnum().getValue());
+        Integer dealId = getDealId(modifyAd.getDealMode().name() + SUFFIX);
         if (dealId == null) return Result.fail("该类排期不存在");
 
         //获取排期下所有排期条目

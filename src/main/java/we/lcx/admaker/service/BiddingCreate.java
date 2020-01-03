@@ -4,11 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import we.lcx.admaker.common.Entity;
-import we.lcx.admaker.common.Result;
 import we.lcx.admaker.common.Task;
 import we.lcx.admaker.common.TaskResult;
 import we.lcx.admaker.common.entities.Ad;
-import we.lcx.admaker.common.entities.ModifyAd;
 import we.lcx.admaker.common.entities.NewAds;
 import we.lcx.admaker.common.entities.Unit;
 import we.lcx.admaker.common.consts.Params;
@@ -16,30 +14,23 @@ import we.lcx.admaker.common.consts.Settings;
 import we.lcx.admaker.common.consts.URLs;
 import we.lcx.admaker.common.enums.BiddingMode;
 import we.lcx.admaker.common.enums.ShowType;
-import we.lcx.admaker.service.aop.Trace;
-import we.lcx.admaker.service.aop.TraceAop;
 import we.lcx.admaker.utils.HttpExecutor;
 import we.lcx.admaker.utils.CommonUtil;
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Created by LinChenxiao on 2019/12/12 19:21
  **/
 @Slf4j
 @Service
-public class BiddingService {
+public class BiddingCreate {
     @Resource
     private BasicService basicService;
 
     @Value("${ad.url.maisui}")
     private String URL;
 
-    @Value("${ad.maisui.adPlanId}")
-    private String PLAN_ID;
+    private static final String PLAN_ID = "443817"; //计划id
 
     //单位分，bidAmountMin和bidAmountMax单位为元
     private String getPrice(String planId, Integer uid, BiddingMode mode) {
@@ -51,9 +42,8 @@ public class BiddingService {
         return String.valueOf(result.getEntity().get("result campaignPackagePrice"));
     }
 
-    @Trace
     public Entity composeEntity(NewAds ads) {
-        basicService.checkFlight(ads.getFlight());
+        basicService.checkFlight(ads.getFlightId());
         Ad ad = basicService.getAdFlight(ads);
         Entity entity = Entity.of(Params.MAISUI_CREATE);
         entity.put("adPlanId", PLAN_ID)

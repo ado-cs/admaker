@@ -8,4 +8,4 @@ ad:
     maisui: http://10.200.132.146:10020/
     maitian: http://10.200.132.146:60001/
   setting:
-    suffix: _release
+    suffix: _test

@@ -10,10 +10,7 @@ import we.lcx.admaker.common.consts.URLs;
 import we.lcx.admaker.common.entities.ModifyAd;
 import we.lcx.admaker.common.entities.NewAds;
 import we.lcx.admaker.manager.AdManager;
-import we.lcx.admaker.service.BasicService;
-import we.lcx.admaker.service.BiddingService;
-import we.lcx.admaker.service.ContractService;
-import we.lcx.admaker.service.aop.TraceAop;
+import we.lcx.admaker.service.BiddingCreate;
 import we.lcx.admaker.utils.CommonUtil;
 import we.lcx.admaker.utils.HttpExecutor;
 
@@ -29,19 +26,16 @@ import java.util.Set;
 @Service
 public class BiddingManager implements AdManager {
     @Resource
-    private BiddingService biddingService;
-
-    @Resource
-    private TraceAop traceAop;
+    private BiddingCreate biddingCreate;
 
     @Value("${ad.url.maisui}")
     private String URL;
 
     @Override
     public Result create(NewAds ads) {
-        Entity entity = biddingService.composeEntity(ads);
+        Entity entity = biddingCreate.composeEntity(ads);
         List<Task> tasks = new ArrayList<>();
-        for (int i = 0; i < ads.getRealAmount(); i++) {
+        for (int i = 0; i < ads.getAmount(); i++) {
             Entity e = entity.copy();
             tasks.add(Task.post(URL + URLs.MAISUI_CREATE)
                     .param(e.put("adformName", e.get("adformName") + CommonUtil.randomSuffix(6))));
@@ -51,12 +45,11 @@ public class BiddingManager implements AdManager {
             if (result.isSuccess())
                 adIds.add((Integer) result.getEntity().get("result"));
         }
+        //todo approve
         return Result.ok(adIds);
     }
 
-    @Override
     public Result cancel(String traceId) {
-        List ids = new ArrayList<>(traceAop.cancel(traceId));
         return null;
     }
 

@@ -100,18 +100,17 @@ function composeModify() {
         msgBox('提示', '请选择广告类型');
         return false
     }
-    data.flightName = $('input[name="flight"]').nextAll('.text').html();
+    data.flightName = $('input[name="flightId"]').nextAll('.text').html();
     if (!data.deal) data.deal = 1;
     if (!data.fee) data.fee = parseInt(data.type) === 1 && parseInt(data.deal) === 2 ? 2 : 1;
-    if (!data.category) data.category = 1;
     return data
 }
 
 function composeData() {
     let data = composeModify();
-    data.flightType = divide(data.flight, true);
-    data.flight = divide(data.flight);
-    if (!data.flight) {
+    data.flightType = divide(data.flightId, true);
+    data.flightId = divide(data.flightId);
+    if (!data.flightId) {
         msgBox('提示', '请选择广告位');
         return false
     }
@@ -136,9 +135,8 @@ function composeData() {
     if (!data.showRadio || isNaN(parseInt(data.showRadio)) || parseInt(data.showRadio) <= 0 || parseInt(data.showRadio) > 100) data.showRadio = 0.4;
     else data.showRadio /= 100;
     let date = new Date();
-    if (!data.name) data.name = '压测' + parseDate(date);
     if (!data.begin) data.begin = parseDate(date, '-');
-    if (!data.end) data.end = data.begin;
+    if (!data.end) data.end = '2021-12-31';
     if (compareDate(data.begin, data.end) > 0) {
         msgBox('提示', '结束时间不能开始时间之前');
         return false
@@ -148,7 +146,7 @@ function composeData() {
 
 function selectionChanged() {
     let self = $(this);
-    const names = {'flight': 'type', 'type': 'fee', 'deal': 'fee'};
+    const names = {'flightId': 'type', 'type': 'fee', 'deal': 'fee'};
     let name = self.attr('name');
     let sel = self.val();
     let next = null;
@@ -157,7 +155,7 @@ function selectionChanged() {
         next = $(format('input[name="{}"]', names[name]));
         val = next.val()
     }
-    if (name === 'flight') {
+    if (name === 'flightId') {
         let v = divide(sel, true);
         let opt = [];
         if (v === '1' || v === '3') opt.push({name: '合约', value: 1});
@@ -183,7 +181,7 @@ function selectionChanged() {
     } else if (name === 'fee') {
         if ($('input[name="type"]').val() === '1') {
             setDisabled('flow', sel !== '1');
-            setDisabled(['category', 'showNumber', 'showRadio'], false);
+            setDisabled(['showNumber', 'showRadio'], false);
             let p = $('#show .ui.input input');
             if (sel === '1') {
                 $('#show label').html('每日轮播比例');
@@ -199,7 +197,7 @@ function selectionChanged() {
                 p.attr('placeholder', '展示数量')
             }
         } else {
-            setDisabled(['flow', 'category', 'showNumber', 'showRadio'], true);
+            setDisabled(['flow', 'showNumber', 'showRadio'], true);
         }
     }
 
@@ -219,11 +217,8 @@ function initEvents() {
     };
     $('.ui.selection.dropdown').dropdown();
     $('.ui.dropdown.button').dropdown();
-    for (let t of ['flight', 'type', 'deal', 'fee'])
+    for (let t of ['flightId', 'type', 'deal', 'fee'])
         $(format('input[name="{}"]', t)).bind('change', selectionChanged);
-    $('input[name="begin"]').bind('change', function () {
-        $('input[name="end"]').val($(this).val());
-    });
     $('#settings').bind('click', function () {
         let p = $('#more');
         if (p.hasClass('in')) return;
@@ -253,7 +248,7 @@ function initEvents() {
             },
             onResponse: function (response) {
                 if (!response || !response.success || !response.results || response.results.length === 0)
-                    fillOptions('flight', []);
+                    fillOptions('flightId', []);
                 return response;
             }
         }
@@ -328,9 +323,8 @@ function initEvents() {
 
 function initData() {
     let date = new Date();
-    $('input[name="name"]').val('压测' + parseDate(date));
     $('input[name="begin"]').val(parseDate(date, '-'));
-    $('input[name="end"]').val(parseDate(date, '-'));
+    $('input[name="end"]').val('2021-12-31');
 }
 
 $(document).ready(() => {
