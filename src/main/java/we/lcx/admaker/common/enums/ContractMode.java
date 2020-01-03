@@ -23,6 +23,12 @@ public enum ContractMode {
         return null;
     }
 
+    public static ContractMode of(String name) {
+        for (ContractMode mode : values())
+            if (mode.name().equalsIgnoreCase(name)) return mode;
+        return null;
+    }
+
     public int getCode() {
         return code;
     }

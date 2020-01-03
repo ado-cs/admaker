@@ -55,16 +55,13 @@ public class BiddingManager implements AdManager {
     }
 
     @Override
-    public void cancel(String traceId) {
+    public Result cancel(String traceId) {
         List ids = new ArrayList<>(traceAop.cancel(traceId));
-        ModifyAd modifyAd = new ModifyAd();
-        modifyAd.setIds(ids);
-        modifyAd.setState(-1);
-        modify(modifyAd);
+        return null;
     }
 
     @Override
-    public void modify(ModifyAd modifyAd) {
-
+    public Result modify(ModifyAd modifyAd) {
+        return null;
     }
 }

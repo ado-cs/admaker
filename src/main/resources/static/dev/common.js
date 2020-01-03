@@ -88,7 +88,7 @@ function contains(array, val) {
     return false;
 }
 
-function composeData() {
+function composeModify() {
     let data = {};
     $('input').each(function () {
         let name = $(this).attr('name');
@@ -96,14 +96,23 @@ function composeData() {
             data[name] = $(this).val()
         }
     });
+    if (!data.type) {
+        msgBox('提示', '请选择广告类型');
+        return false
+    }
+    data.flightName = $('input[name="flight"]').nextAll('.text').html();
+    if (!data.deal) data.deal = 1;
+    if (!data.fee) data.fee = parseInt(data.type) === 1 && parseInt(data.deal) === 2 ? 2 : 1;
+    if (!data.category) data.category = 1;
+    return data
+}
+
+function composeData() {
+    let data = composeModify();
     data.flightType = divide(data.flight, true);
     data.flight = divide(data.flight);
     if (!data.flight) {
         msgBox('提示', '请选择广告位');
-        return false
-    }
-    if (!data.type) {
-        msgBox('提示', '请选择广告类型');
         return false
     }
     let amount = parseInt(data.amount);
@@ -111,10 +120,7 @@ function composeData() {
         msgBox('提示', '请输入正确的广告数量');
         return false
     }
-    data.flightName = $('input[name="flight"]').nextAll('.text').html();
-    if (!data.deal) data.deal = 1;
     if (!data.dspId) data.dspId = 10101;
-    if (!data.fee) data.fee = parseInt(data.type) === 1 && parseInt(data.deal) === 2 ? 2 : 1;
     if (!data.flow) data.flow = 1;
     if (parseInt(data.fee) === 1 && amount > 1) {
         if (amount === 2 && contains([1, 4, 6, 9, 10], data.flow)) data.flow = 2;
@@ -126,7 +132,6 @@ function composeData() {
             return false
         }
     }
-    if (!data.category) data.category = 1;
     if (!data.showNumber || isNaN(parseInt(data.showNumber)) || parseInt(data.showNumber) < 10 || parseInt(data.showNumber) > 99999) data.showNumber = 10000;
     if (!data.showRadio || isNaN(parseInt(data.showRadio)) || parseInt(data.showRadio) <= 0 || parseInt(data.showRadio) > 100) data.showRadio = 0.4;
     else data.showRadio /= 100;
@@ -209,7 +214,8 @@ function initEvents() {
     $.fn.api.settings.api = {
         'create': '/j/create',
         'query': '/j/flight/{query}',
-        'cancel': '/j/cancel'
+        'cancel': '/j/cancel',
+        'modify': '/j/modify'
     };
     $('.ui.selection.dropdown').dropdown();
     $('.ui.dropdown.button').dropdown();
@@ -289,6 +295,34 @@ function initEvents() {
             msgBox('创建失败', errorMessage);
         }
     });
+    const buttons = ['open', 'close', 'delete'];
+
+    for (let i in buttons) {
+        $('#' + buttons[i]).api({
+            action: 'modify',
+            method: 'post',
+            beforeSend: function (settings) {
+                let data = composeModify();
+                if (!data) return false;
+                data.state = 1 - i;
+                console.info(data.state);
+                settings.data = data;
+                $('#create').addClass('loading');
+                return settings;
+            },
+            onResponse: function (response) {
+                $('#create').removeClass('loading');
+                if (response) {
+                    if (response.success) msgBox('成功', '操作完成！');
+                    else msgBox('失败', response.message);
+                } else msgBox('失败', '无响应！');
+                return response;
+            },
+            onError: function (errorMessage) {
+                msgBox('失败', errorMessage);
+            }
+        });
+    }
 
 }
 

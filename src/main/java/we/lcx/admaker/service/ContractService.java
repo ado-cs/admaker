@@ -3,17 +3,20 @@ package we.lcx.admaker.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import we.lcx.admaker.common.*;
 import we.lcx.admaker.common.consts.Params;
 import we.lcx.admaker.common.consts.Settings;
 import we.lcx.admaker.common.consts.URLs;
 import we.lcx.admaker.common.entities.*;
 import we.lcx.admaker.common.enums.*;
+import we.lcx.admaker.common.json.DealItem;
 import we.lcx.admaker.service.aop.Trace;
 import we.lcx.admaker.utils.HttpExecutor;
 import we.lcx.admaker.utils.CommonUtil;
 import javax.annotation.Resource;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by LinChenxiao on 2019/12/23 17:26
@@ -55,7 +58,7 @@ public class ContractService {
     private BasicService basicService;
     
     @Trace
-    public int createResource(NewAds ads, ContractTag tag) {
+    public int createResource(NewAds ads, ContractLog tag) {
         TaskResult result = HttpExecutor.doRequest(
                 Task.post(URL + URLs.MAITIAN_RESOURCE)
                         .cookie(basicService.getCookie()).param(Entity.of(Params.MAITIAN_RESOURCE)
@@ -71,7 +74,7 @@ public class ContractService {
     }
 
     @Trace
-    public int createItem(NewAds ads, ContractTag tag) {
+    public int createItem(NewAds ads, ContractLog tag) {
         final String name = ads.getDealMode().name() + "_" + ads.getContractMode().name()
                 + (ads.getContractMode() == ContractMode.CPT ? "_" + ads.getFlowEnum().getCode() : "");
 
@@ -107,7 +110,7 @@ public class ContractService {
     }
 
     @Trace
-    public int createRevenue(NewAds ads, ContractTag tag) {
+    public int createRevenue(NewAds ads, ContractLog tag) {
         if (tag.getRevenueId() != 0) return tag.getRevenueId();
         Date date = new Date();
         return (int) HttpExecutor.doRequest(
@@ -123,7 +126,7 @@ public class ContractService {
     }
 
     @Trace(value = "reservation", loop = true)
-    public int createReservation(NewAds ads, ContractTag tag) {
+    public int createReservation(NewAds ads, ContractLog tag) {
         Entity entity = Entity.of(Params.MAITIAN_RESERVE)
                 .put("customerUid", CUSTOMER_ID)
                 .put("resourceOwnerUid", MEDIA_ID)
@@ -152,20 +155,29 @@ public class ContractService {
                 .getEntity().get("result");
     }
 
-    @Trace
-    public int createDeal(NewAds ads, ContractTag tag) {
-        final String name = ads.getDealMode().name() + ads.getCategoryEnum().getValue();
+    private Integer getDealId(String name) {
+        Pair<Integer, Integer> pair = new Pair<>();
         HttpExecutor.doRequest(
                 Task.post(URL + URLs.MAITIAN_DEAL_LIST)
                         .cookie(basicService.getCookie()).param(Entity.of(Params.COMMON_PAGE).put("scheduleName", name)))
                 .valid("获取排期失败").getEntity().cd("result/list").each(e -> {
             if (CONTRACT_ID.equals(Long.parseLong(String.valueOf(e.get("contractUid"))))) {
-                tag.setDealId((int) e.get("uid"));
+                pair.setKey((int) e.get("uid"));
                 return true;
             }
             return false;
         });
-        if (tag.getDealId() != 0) return tag.getDealId();
+        return pair.getKey();
+    }
+
+    @Trace
+    public int createDeal(NewAds ads, ContractLog tag) {
+        String name = ads.getDealMode().name() + ads.getCategoryEnum().getValue();
+        Integer id = getDealId(name);
+        if (id != 0) {
+            tag.setDealId(id);
+            return id;
+        }
         Date date = new Date();
         return (int) HttpExecutor.doRequest(
                 Task.post(URL + URLs.MAITIAN_DEAL)
@@ -184,7 +196,7 @@ public class ContractService {
     }
 
     @Trace(value = "dealItem", loop = true)
-    public int createDealItem(NewAds ads, ContractTag tag) {
+    public int createDealItem(NewAds ads, ContractLog tag) {
         TaskResult result = HttpExecutor.doRequest(
                 Task.post(URL + URLs.MAITIAN_QUERY)
                         .cookie(basicService.getCookie()).param(Entity.of().put("uid", String.valueOf(tag.getReservationId()))));
@@ -215,7 +227,7 @@ public class ContractService {
     }
 
     @Trace
-    public List buildCreative(NewAds ads, ContractTag tag) {
+    public List buildCreative(NewAds ads, ContractLog tag) {
         Ad ad = tag.getAd();
         TaskResult result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_TEMPLATE).cookie(basicService.getCookie())
                 .param(Entity.of().put("uid", ad.getPositionId())));
@@ -248,67 +260,82 @@ public class ContractService {
         return CommonUtil.toList(creative.getHead());
     }
 
-    public void deleteReservation(int id) {
+    public boolean deleteReservation(int id) {
         TaskResult result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_RESERVATION_DELETE).cookie(basicService.getCookie()).param(Entity.of()
                 .put("uid", id).put("version", 0)));
         if (!result.isSuccess()) {
             result.error();
             log.error("删除资源预定失败，预定id = {}", id);
+            return false;
         }
+        return true;
     }
 
-    public void modify(ModifyAd modifyAd) {
-        Map<Integer, DealItem> items = new HashMap<>();
+    public Result modify(ModifyAd modifyAd) {
+        return modify(modifyAd, null);
+    }
 
-        for (Integer id : new HashSet<>(modifyAd.getIds())) {
-            TaskResult result;
-            DealItem item = items.get(id);
-            if (item == null) {
-                result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_PAGE).cookie(basicService.getCookie()).param(Entity.of(Params.COMMON_PAGE)
-                        .put("scheduleItemUid", id)));
-                if (!result.isSuccess()) {
-                    result.error();
-                    log.error("获取排期条目所在排期ID失败，itemId = {}", id);
-                    continue;
+    public Result modify(ModifyAd modifyAd, List<Integer> dealItemIds) {
+        Integer dealId = getDealId(modifyAd.getDealMode().name() + modifyAd.getCategoryEnum().getValue());
+        if (dealId == null) return Result.fail("该类排期不存在");
+
+        //获取排期下所有排期条目
+        List<DealItem> list = new ArrayList<>();
+        TaskResult result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_DETAIL).cookie(basicService.getCookie()).param(Entity.of()
+                .put("uid", String.valueOf(dealId))));
+        if (!result.isSuccess()) {
+            result.error();
+            return Result.fail("获取排期条目详情失败");
+        }
+        result.getEntity().cd("result/items").each(v -> {
+            DealItem t = v.to(DealItem.class);
+            t.setStatus("ON".equals(v.get("trafficSwitch code")));
+            t.setFee(ContractMode.of((String) v.get("billingMode value")));
+            list.add(t);
+        });
+        List<DealItem> items = new ArrayList<>();
+        List<DealItem> closeItems = new ArrayList<>();
+        int num = 0;
+        for (DealItem item : list) {
+            if (CommonUtil.contains(dealItemIds, item.getUid()) || item.getFee() == modifyAd.getContractMode() &&
+                    Objects.equals(modifyAd.getFlightName() + Settings.SUFFIX_VERSION, item.getResourceName())) {
+                if (item.getStatus() && modifyAd.getState() > 0) {
+                    closeItems.add(item);
+                    num++;
                 }
-                Integer dealId = (Integer) result.getEntity().get("result list uid");
-                result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_DETAIL).cookie(basicService.getCookie()).param(Entity.of()
-                        .put("uid", String.valueOf(dealId))));
-                if (!result.isSuccess()) {
-                    result.error();
-                    log.error("获取排期下所有排期条目详情失败，itemId = {}", id);
-                    continue;
+                else if (modifyAd.getState() == -1 || modifyAd.getState() > 0 ^ item.getStatus()) {
+                    items.add(item);
                 }
-                result.getEntity().cd("result/items").each(v -> {
-                    DealItem t = new DealItem();
-                    t.setReservationId((Integer) v.get("reserveItemUid"));
-                    t.setVersion((Integer) v.get("version"));
-                    t.setStatus("ON".equals(v.get("trafficSwitch code")));
-                    items.put((Integer) v.get("uid"), t);
-                });
-                item = items.get(id);
             }
-            if (item == null) {
-                log.error("获取排期条目关联预约ID失败，itemId = {}", id);
+        }
+        if (modifyAd.getState() > 0) {
+            if (num + items.size() < modifyAd.getAmount()) return Result.fail("没有足够数量的广告");
+            if (num == modifyAd.getAmount()) Result.ok();
+            if (num > modifyAd.getAmount()) {
+                modifyAd.setState(0);
+                items = closeItems;
+            }
+            num = Math.abs(modifyAd.getAmount() - num);
+            while (items.size() > num) items.remove(0);
+        }
+        final AtomicBoolean error = new AtomicBoolean(false);
+        //错误只打点不抛出
+        for (DealItem item : items) {
+            result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_ITEM_CLOSE).cookie(basicService.getCookie()).param(Entity.of()
+                    .put("uid", item.getUid()).put("version", item.getVersion()).put("trafficSwitch", modifyAd.getState() > 0 ? "ON" : "CLOSE")));
+            if (!result.isSuccess()) {
+                error.set(true);
+                result.error();
+                log.error("开启/关闭排期条目流量失败，itemId = {}", item.getUid());
                 continue;
             }
 
-            if ((modifyAd.getState() > 0) ^ item.getStatus()) {
-                result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_ITEM_CLOSE).cookie(basicService.getCookie()).param(Entity.of()
-                        .put("uid", id).put("version", item.getVersion()).put("trafficSwitch", item.getStatus() ? "CLOSE" : "ON")));
-                if (!result.isSuccess()) {
-                    result.error();
-                    log.error("开启/关闭排期条目流量失败，itemId = {}", id);
-                    continue;
-                }
-                item.setVersion(item.getVersion() + 1);
-            }
-
             result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_AD_LIST).cookie(basicService.getCookie()).param(Entity.of(Params.MAITIAN_AD_LIST)
-                    .put("scheduleItemId", id)));
+                    .put("scheduleItemId", item.getUid())));
             if (!result.isSuccess()) {
+                error.set(true);
                 result.error();
-                log.error("获取排期条目下广告位失败，itemId = {}", id);
+                log.error("获取排期条目下广告位失败，itemId = {}", item.getUid());
                 continue;
             }
             result.getEntity().cd("result/list").each(v -> {
@@ -317,29 +344,35 @@ public class ContractService {
                 if ("1001".equals(v.get("activeStatus code")) ^ (modifyAd.getState() > 0)) {
                     TaskResult r = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_AD_CLOSE).cookie(basicService.getCookie()).param(Entity.of()
                             .put("id", adId).put("version", version).put("status", modifyAd.getState() > 0 ? "1001" : "411")));
-                    if (!r.isSuccess()) log.error("关闭广告失败，itemId = {}, adId = {}", id, adId);
+                    if (!r.isSuccess()) {
+                        error.set(true);
+                        log.error("关闭广告失败，itemId = {}, adId = {}", item.getUid(), adId);
+                    }
                     else version++;
                 }
                 if (modifyAd.getState() < 0) {
                     TaskResult r = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_AD_DELETE).cookie(basicService.getCookie()).param(Entity.of()
                             .put("uid", adId).put("version", version)));
                     if (!r.isSuccess()) {
+                        error.set(true);
                         r.error();
-                        log.error("删除广告失败，itemId = {}, adId = {}", id, adId);
+                        log.error("删除广告失败，itemId = {}, adId = {}", item.getUid(), adId);
                     }
                 }
             });
 
             if (modifyAd.getState() < 0) {
                 result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_ITEM_DELETE).cookie(basicService.getCookie()).param(Entity.of()
-                        .put("uid", id).put("version", item.getVersion())));
+                        .put("uid", item.getUid()).put("version", item.getVersion() + 1)));
                 if (!result.isSuccess()) {
+                    error.set(true);
                     result.error();
-                    log.error("删除排期条目失败，itemId = {}", id);
+                    log.error("删除排期条目失败，itemId = {}", item.getUid());
                     continue;
                 }
-                deleteReservation(item.getReservationId());
+                if (!deleteReservation(item.getReservationId())) error.set(true);
             }
         }
+        return error.get() ? Result.fail("操作失败，请检查日志") : Result.ok();
     }
 }

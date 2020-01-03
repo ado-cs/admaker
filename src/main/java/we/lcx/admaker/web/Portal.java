@@ -47,11 +47,10 @@ public class Portal {
         return Result.ok(basicService.queryFlight(query));
     }
 
-    @GetMapping("/j/modify")
+    @PostMapping("/j/modify")
     @ResponseBody
     public Result modify(ModifyAd modifyAd) {
-        contractManager.modify(modifyAd);
-        return Result.ok();
+        return contractManager.modify(modifyAd);
     }
 
     @PostMapping("/j/create")
@@ -68,8 +67,6 @@ public class Portal {
     public Result cancel(String traceId) {
         NewAds ad = traceAop.getAd(traceId);
         if (ad == null) return Result.fail("记录不存在！");
-        if (ad.getType() == 1) contractManager.cancel(traceId);
-        else biddingManager.cancel(traceId);
-        return Result.ok();
+        return ad.getType() == 1 ? contractManager.cancel(traceId) : biddingManager.cancel(traceId);
     }
 }

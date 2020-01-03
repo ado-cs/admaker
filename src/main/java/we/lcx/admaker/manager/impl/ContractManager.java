@@ -10,7 +10,7 @@ import we.lcx.admaker.common.TaskResult;
 import we.lcx.admaker.common.consts.Params;
 import we.lcx.admaker.common.consts.Settings;
 import we.lcx.admaker.common.consts.URLs;
-import we.lcx.admaker.common.entities.ContractTag;
+import we.lcx.admaker.common.entities.ContractLog;
 import we.lcx.admaker.common.entities.ModifyAd;
 import we.lcx.admaker.common.entities.NewAds;
 import we.lcx.admaker.common.entities.Pair;
@@ -48,7 +48,7 @@ public class ContractManager implements AdManager {
 
     @Override
     public Result create(NewAds ads) {
-        ContractTag tag = new ContractTag();
+        ContractLog tag = new ContractLog();
         tag.setAd(basicService.getAdFlight(ads));
         tag.setCreative(contractService.buildCreative(ads, tag));
         tag.setResourceId(contractService.createResource(ads, tag));
@@ -87,7 +87,8 @@ public class ContractManager implements AdManager {
     }
 
     @Override
-    public void cancel(String traceId) {
+    public Result cancel(String traceId) {
+        NewAds ads = traceAop.getAd(traceId);
         List<Integer> dealItems = new ArrayList<>();
         int id = -1;
         boolean even = false;
@@ -97,15 +98,19 @@ public class ContractManager implements AdManager {
             even = !even;
         }
         if (even) contractService.deleteReservation(id);
-        if (CollectionUtils.isEmpty(dealItems)) return;
+        if (CollectionUtils.isEmpty(dealItems)) return Result.ok();
         ModifyAd modifyAd = new ModifyAd();
-        modifyAd.setIds(dealItems);
+        modifyAd.setFlightName(ads.getFlightName());
+        modifyAd.setCategoryEnum(ads.getCategoryEnum());
+        modifyAd.setContractMode(ads.getContractMode());
+        modifyAd.setDealMode(ads.getDealMode());
         modifyAd.setState(-1);
-        modify(modifyAd);
+        return contractService.modify(modifyAd, dealItems);
     }
 
     @Override
-    public void modify(ModifyAd modifyAd) {
-        contractService.modify(modifyAd);
+    public Result modify(ModifyAd modifyAd) {
+        modifyAd.convert();
+        return contractService.modify(modifyAd);
     }
 }

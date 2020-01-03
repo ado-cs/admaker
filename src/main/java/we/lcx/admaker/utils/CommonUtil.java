@@ -19,6 +19,10 @@ public class CommonUtil {
         return false;
     }
 
+    public static boolean contains(Collection list, Object value) {
+        return !notContains(list, value);
+    }
+
     public static boolean notContains(Collection list, Object value) {
         return CollectionUtils.isEmpty(list) || !list.contains(value);
     }

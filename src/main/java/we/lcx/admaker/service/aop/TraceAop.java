@@ -8,9 +8,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import we.lcx.admaker.common.Result;
 import we.lcx.admaker.common.entities.NewAds;
-import we.lcx.admaker.common.entities.Pair;
 import we.lcx.admaker.service.BasicService;
-
 import javax.annotation.Resource;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

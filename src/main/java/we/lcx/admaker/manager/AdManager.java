@@ -9,6 +9,6 @@ import we.lcx.admaker.common.entities.NewAds;
  **/
 public interface AdManager {
     Result create(NewAds ads);
-    void cancel(String traceId);
-    void modify(ModifyAd modifyAd);
+    Result cancel(String traceId);
+    Result modify(ModifyAd modifyAd);
 }
