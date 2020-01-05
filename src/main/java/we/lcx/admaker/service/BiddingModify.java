@@ -11,6 +11,7 @@ import we.lcx.admaker.common.consts.Settings;
 import we.lcx.admaker.common.consts.Urls;
 import we.lcx.admaker.common.entities.BiddingAd;
 import we.lcx.admaker.common.enums.BiddingMode;
+import we.lcx.admaker.common.enums.DealMode;
 import we.lcx.admaker.utils.CommonUtil;
 import we.lcx.admaker.utils.HttpExecutor;
 
@@ -22,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created by Lin Chenxiao on 2020-01-04
  **/
 @Service
-public class BiddingModify {
+public class BiddingModify implements Modify {
 
     @Value("${ad.url.maisui}")
     private String URL;
@@ -45,82 +46,105 @@ public class BiddingModify {
             date.setTime(date.getTime() + Settings.DAY);
             String end = CommonUtil.parseDateString(CommonUtil.toDateString(date));
             List<Integer> adIds = new ArrayList<>();
+            List<Integer> openAdIds = new ArrayList<>();
             Map<Integer, Map<String, List<BiddingAd>>> allAds = new HashMap<>();
             HttpExecutor.doRequest(Task.post(URL + Urls.MAISUI_AD_LIST).param(Entity.of(Params.MAISUI_AD_LIST)
                     .put("beginDate", begin)
                     .put("endDate", end)))
                     .valid("获取今日麦穗广告信息失败")
-                    .getEntity().each(v -> {
-                String flag = String.valueOf(v.get("configuredStatus code")); //todo 待验证是否投放过期所在 / compositeStatus
-                boolean open = "1001".equals(flag);
-                if (!open && !"411".equals(flag)) return;
-                int id = (int) v.get("adformId");
-                String name = (String) v.get("adformName");
-                if (open && (StringUtils.isEmpty(name) || !name.contains("_" + Settings.SPECIAL_NAME)))
+                    .getEntity().cd("result/list").each(v -> {
+                BiddingAd ad = buildAd(v);
+                if (ad == null) {
+                    Integer id = (Integer) v.get("adformId");
                     adIds.add(id);
+                    openAdIds.add(id);
+                }
                 else {
-                    BiddingAd biddingAd = new BiddingAd();
-                    biddingAd.setId(id);
-                    biddingAd.setVersion(new AtomicInteger((int) v.get("version")));
-                    biddingAd.setActive(open);
-                    String[] s = CommonUtil.splitName(name, "_", 2, 2);
-                    biddingAd.setName(s[0]);
-                    biddingAd.setBiddingMode(BiddingMode.valueOf(s[1]));
-                    Integer idx = getIndex(biddingAd.getBiddingMode());
-                    allAds.computeIfAbsent(idx, t -> new HashMap<>()).computeIfAbsent(s[0], t -> new ArrayList<>()).add(biddingAd);
-                    adVersion.put(id, biddingAd.getVersion());
+                    ad.setActive(true);
+                    allAds.computeIfAbsent(getIndex(ad.getBiddingMode()), t -> new HashMap<>()).computeIfAbsent(ad.getName(), t -> new ArrayList<>()).add(ad);
+                }
+            });
+            HttpExecutor.doRequest(Task.post(URL + Urls.MAISUI_AD_LIST).param(Entity.of(Params.MAISUI_AD_LIST)
+                    .put("beginDate", begin)
+                    .put("endDate", end)
+                    .put("queryStates", 2)
+                    .put("adInfo", "_" + Settings.SPECIAL_NAME)))
+                    .valid("获取今日麦穗广告信息失败")
+                    .getEntity().cd("result/list").each(v -> {
+                BiddingAd ad = buildAd(v);
+                if (ad == null) adIds.add((Integer) v.get("adformId"));
+                else {
+                    ad.setActive(false);
+                    allAds.computeIfAbsent(getIndex(ad.getBiddingMode()), t -> new HashMap<>()).computeIfAbsent(ad.getName(), t -> new ArrayList<>()).add(ad);
                 }
             });
             ads = allAds;
-            updateAds(adIds, false);
+            update(openAdIds, false);
+            remove(adIds);
         } finally {
             processing = false;
         }
     }
 
-    private Integer getIndex(BiddingMode biddingMode) {
-        return biddingMode.getCode();
+    private BiddingAd buildAd(Entity v) {
+        Integer id = (Integer) v.get("adformId");
+        String name = (String) v.get("adformName");
+        adVersion.put(id, new AtomicInteger((int) v.get("version")));
+        if (StringUtils.isEmpty(name) || !name.contains("_" + Settings.SPECIAL_NAME)) return null;
+        BiddingAd biddingAd = new BiddingAd();
+        biddingAd.setId(id);
+        String[] s = CommonUtil.splitName(name, "_", 2, 2);
+        biddingAd.setName(s[0]);
+        biddingAd.setBiddingMode(BiddingMode.valueOf(s[1]));
+        return biddingAd;
     }
 
-    public void updateAds(Collection<Integer> adIds, boolean flag) {
+    private Integer getIndex(BiddingMode biddingMode) {
+        return biddingMode == null ? 0 : biddingMode.getCode();
+    }
+
+    @Override
+    public void update(Collection adIds, boolean flag) {
         if (CollectionUtils.isEmpty(adIds)) return;
         if (!HttpExecutor.doRequest(Task.post(URL + (flag ? Urls.MAISUI_OPEN : Urls.MAISUI_PAUSE))
                 .param(composeEntity(adIds)))
                 .logError("开启/关闭麦穗广告失败")) {
-            //回退版本 todo 验证 麦田和麦穗 失败时版本号是否增加
-            for (Integer id : adIds) {
-                adVersion.computeIfAbsent(id, t -> new AtomicInteger()).decrementAndGet();
+            for (Object id : adIds) {
+                adVersion.computeIfAbsent((Integer) id, t -> new AtomicInteger()).decrementAndGet();
             }
         }
     }
 
-    public void removeAds(Collection<Integer> adIds) {
+    @Override
+    public void remove(Collection adIds) {
         if (CollectionUtils.isEmpty(adIds)) return;
         if (HttpExecutor.doRequest(Task.post(URL + Urls.MAISUI_DELETE)
                 .param(composeEntity(adIds)))
                 .logError("删除麦穗广告失败")) {
-            for (Integer id : adIds) {
+            for (Object id : adIds) {
                 adVersion.remove(id);
             }
         }
     }
 
-    private Entity composeEntity(Collection<Integer> adIds) {
+    private Entity composeEntity(Collection adIds) {
         Entity entity = Entity.of(Params.MAISUI_UPDATE).newList("adFormUpdateList");
-        for (Integer id : adIds) {
+        for (Object id : adIds) {
             entity.put("adformId", id)
-                    .put("version", adVersion.computeIfAbsent(id, t -> new AtomicInteger()).getAndIncrement())
+                    .put("version", adVersion.computeIfAbsent((Integer) id, t -> new AtomicInteger()).getAndIncrement())
                     .add();
         }
         return entity;
     }
 
+    @Override
     public Map<Integer, Map<String, List<BiddingAd>>> getAds() {
         return ads;
     }
 
-    public List<BiddingAd> getAds(String flightName, BiddingMode fee) {
-        Map<String, List<BiddingAd>> map = ads.get(getIndex(fee));
+    @Override
+    public List<BiddingAd> getAds(String flightName, DealMode deal, Integer fee) {
+        Map<String, List<BiddingAd>> map = ads.get(getIndex(BiddingMode.of(fee)));
         return map == null ? null : map.get(flightName);
     }
 }

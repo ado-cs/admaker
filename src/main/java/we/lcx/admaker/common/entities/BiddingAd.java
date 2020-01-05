@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class BiddingAd {
     private Integer id;
     private String name;
-    private AtomicInteger version;
     private Boolean active;
     private BiddingMode biddingMode;
 }

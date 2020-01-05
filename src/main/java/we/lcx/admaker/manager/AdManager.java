@@ -9,5 +9,4 @@ import we.lcx.admaker.common.entities.NewAds;
  **/
 public interface AdManager {
     Result create(NewAds ads);
-    Result modify(ModifyAd modifyAd);
 }

@@ -86,7 +86,7 @@ public class CommonUtil {
 
     public static long timeOfToday() {
         Calendar calendar = Calendar.getInstance();
-        return parseTime(calendar.get(Calendar.YEAR)  + "-" + calendar.get(Calendar.MONTH) + "-" + calendar.get(Calendar.DATE));
+        return parseTime(calendar.get(Calendar.YEAR)  + "-" + (calendar.get(Calendar.MONTH) + 1) + "-" + calendar.get(Calendar.DATE));
     }
 
     public static long parseTime(String date) {

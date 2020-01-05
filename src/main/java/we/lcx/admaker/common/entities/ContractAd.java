@@ -15,7 +15,6 @@ public class ContractAd {
     private String name;
     private Integer dealId;
     private String dealItemId;
-    private AtomicInteger version;
     private Boolean active;
     private DealMode dealMode;
     private ContractMode contractMode;

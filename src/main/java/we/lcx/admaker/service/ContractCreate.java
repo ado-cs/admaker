@@ -28,7 +28,7 @@ public class ContractCreate {
     private Integer DSP_ID;
 
     @Value("${ad.setting.suffix}")
-    private Integer SUFFIX;
+    private String SUFFIX;
 
     //以下字段需在麦田提前建立对应条目
     private static final long CUSTOMER_ID = 213290621L; //客户id
@@ -153,7 +153,7 @@ public class ContractCreate {
     public int createDeal(NewAds ads, ContractLog tag) {
         String name = ads.getDealMode().name() + SUFFIX;
         Integer id = getDealId(name);
-        if (id != 0) {
+        if (id != null) {
             tag.setDealId(id);
             return id;
         }

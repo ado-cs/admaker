@@ -12,7 +12,7 @@ function message(title, content, success) {
         p.transition({animation: 'fade down', duration: 300})
     });
     p.transition('fade left');
-    sleep(5000).then(() => {
+    sleep(8000).then(() => {
         if (p.hasClass('visible')) p.transition({animation: 'fade down', duration: 600})
     })
 }
@@ -21,7 +21,7 @@ function msgBox(title, content, approve) {
     $('.modal .header').html(title);
     $('.modal .description').html(content);
     let modal = $('.modal');
-    modal.modal({onApprove: approve});
+    modal.modal({closable: false, onApprove: approve});
     modal.modal('show');
 }
 
@@ -314,7 +314,7 @@ function bindTds(idx) {
         if (contains([0, 9, 14], col)) return;
         let val = parseInt(self.html());
         if (isNaN(val)) return;
-        let flightName = self.prevAll().eq(0).html();
+        let flightName = self.prevAll('td:last').html();
         let type = col < 9 ? 1 : 2;
         let deal = col > 4 ? (col > 6 ? 3 : 2) : 1;
         let fee = contains([1, 2, 7, 8, 10, 11], col) ? 1 : 2;
@@ -328,6 +328,7 @@ function bindTds(idx) {
                     message('操作失败', '请输入合法的数量');
                     return;
                 }
+                if (amount === val) return;
                 $(document).api({
                     on: 'now',
                     action: 'modify',
@@ -387,7 +388,8 @@ function initTable(flag) {
                         }
                     });
                     let flag = false;
-                    for (let data of response.results) {
+                    for (let key in response.results) {
+                        let data = response.results[key];
                         let r = getRow(data);
                         total[0] += 1;
                         for (let i = 1; i < 15; i++) {
@@ -423,5 +425,5 @@ function initTable(flag) {
 $(document).ready(() => {
     initEvents();
     initData();
-    //initTable(3)
+    initTable(3)
 });

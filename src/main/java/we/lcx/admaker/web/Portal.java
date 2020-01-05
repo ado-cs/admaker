@@ -11,7 +11,6 @@ import we.lcx.admaker.common.entities.NewAds;
 import we.lcx.admaker.manager.CommonManager;
 import we.lcx.admaker.manager.impl.BiddingManager;
 import we.lcx.admaker.manager.impl.ContractManager;
-import we.lcx.admaker.service.BasicService;
 import javax.annotation.Resource;
 
 /**
@@ -48,8 +47,7 @@ public class Portal {
     @PostMapping("/j/modify")
     @ResponseBody
     public Result modify(ModifyAd modifyAd) {
-        modifyAd.convert();
-        return modifyAd.getType() == 1 ? contractManager.modify(modifyAd) : biddingManager.modify(modifyAd);
+        return commonManager.modify(modifyAd);
     }
 
     @PostMapping("/j/create")
