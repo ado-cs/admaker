@@ -8,6 +8,65 @@
 </head>
 <body style="padding-top: 12px; padding-bottom: 12px">
 <div class="ui container">
+    <div id="messages" style="position: absolute; right: 20px">
+    </div>
+    <table class="ui celled structured table" style="text-align: center">
+        <thead>
+        <tr>
+            <th rowspan="3">广告位</th>
+            <th colspan="9">合约</th>
+            <th colspan="5">竞价</th>
+        </tr>
+        <tr>
+            <th colspan="2">PDB-CPT</th>
+            <th colspan="2">PDB-CPM</th>
+            <th colspan="2">PD</th>
+            <th colspan="2">抄底</th>
+            <th rowspan="2">Sum</th>
+
+            <th colspan="2">CPC</th>
+            <th colspan="2">CPM</th>
+            <th rowspan="2">Sum</th>
+        </tr>
+
+        <tr>
+            <th>All</th>
+            <th>On</th>
+            <th>All</th>
+            <th>On</th>
+            <th>All</th>
+            <th>On</th>
+            <th>All</th>
+            <th>On</th>
+            <th>All</th>
+            <th>On</th>
+            <th>All</th>
+            <th>On</th>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+        <tfoot>
+        <tr>
+            <th class="left aligned"></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+        </tr>
+        </tfoot>
+    </table>
+
     <form class="ui attached segment form">
         <div class="fields">
             <div class="required eight wide field">
@@ -108,29 +167,23 @@
 
                 <div class="four wide field">
                     <label>起始时间</label>
-                    <input type="date" name="begin">
+                    <label>
+                        <input type="date" name="begin">
+                    </label>
                 </div>
 
                 <div class="four wide field">
                     <label>结束时间</label>
-                    <input type="date" name="end">
+                    <label>
+                        <input type="date" name="end">
+                    </label>
                 </div>
             </div>
         </div>
     </form>
-    <div class="ui three bottom attached buttons">
+    <div class="ui two bottom attached buttons">
         <div id="settings" class="ui button"><i class="angle double down icon"></i> 更多设置</div>
         <div id="create" class="ui primary submit button">创建</div>
-        <div class="ui primary buttons">
-            <div class="ui floating dropdown icon button">
-                <i class="dropdown icon"></i>
-                <div class="menu">
-                    <div id="open" class="item"><i class="toggle on icon"></i> 指定开启</div>
-                    <div id="close" class="item"><i class="lock icon"></i> 全部暂停</div>
-                    <div id="delete" class="item"><i class="delete icon"></i> 全部删除</div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <div class="ui mini modal">
@@ -141,6 +194,7 @@
             </div>
         </div>
         <div class="actions">
+            <div class="ui primary approve button">确认</div>
         </div>
     </div>
 </div>

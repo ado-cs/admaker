@@ -43,8 +43,10 @@ public class TaskResult {
         return success;
     }
 
-    public void error() {
-        if (!success) log.error(String.valueOf(error));
+    public boolean logError(String text, Object... obj) {
+        if (success) return true;
+        log.error(text + " caused by " + error, obj);
+        return false;
     }
 
     public TaskResult valid(String message) {

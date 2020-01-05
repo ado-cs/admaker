@@ -23,9 +23,14 @@ public class Result {
         return result;
     }
 
-    public static Result fail(String message) {
+    public static Result fail() {
         Result result = new Result();
         result.success = false;
+        return result;
+    }
+
+    public static Result fail(String message) {
+        Result result = fail();
         result.message = message;
         return result;
     }

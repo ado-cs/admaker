@@ -22,12 +22,6 @@ public enum DealMode {
         return null;
     }
 
-    public static DealMode of(String name) {
-        for (DealMode mode : values())
-            if (mode.name().equalsIgnoreCase(name)) return mode;
-        return null;
-    }
-
     public int getCode() {
         return code;
     }

@@ -4,8 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.function.Function;
-
 /**
  * Created by Lin Chenxiao on 2019-12-31
  **/

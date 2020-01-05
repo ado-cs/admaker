@@ -6,15 +6,13 @@ import org.springframework.stereotype.Service;
 import we.lcx.admaker.common.*;
 import we.lcx.admaker.common.consts.Params;
 import we.lcx.admaker.common.consts.Settings;
-import we.lcx.admaker.common.consts.URLs;
+import we.lcx.admaker.common.consts.Urls;
 import we.lcx.admaker.common.entities.*;
 import we.lcx.admaker.common.enums.*;
-import we.lcx.admaker.common.json.DealItem;
 import we.lcx.admaker.utils.HttpExecutor;
 import we.lcx.admaker.utils.CommonUtil;
 import javax.annotation.Resource;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by LinChenxiao on 2019/12/23 17:26
@@ -45,14 +43,14 @@ public class ContractCreate {
 
     public int createResource(ContractLog tag) {
         TaskResult result = HttpExecutor.doRequest(
-                Task.post(URL + URLs.MAITIAN_RESOURCE)
+                Task.post(URL + Urls.MAITIAN_RESOURCE)
                         .cookie(basicService.getCookie()).param(Entity.of(Params.MAITIAN_RESOURCE)
                         .put("resourceName", tag.getAd().getFlightName() + Settings.SUFFIX_VERSION)))
                 .valid("获取资源id失败");
         if ((int) result.getEntity().get("result total") > 0)
             return (int) result.getEntity().get("result list uid");
         return (int) HttpExecutor.doRequest(
-                Task.post(URL + URLs.MAITIAN_RESOURCE_NEW)
+                Task.post(URL + Urls.MAITIAN_RESOURCE_NEW)
                         .cookie(basicService.getCookie()).param(Entity.of(Params.MAITIAN_RESOURCE_NEW)
                         .put("resourceName", tag.getAd().getFlightName() + Settings.SUFFIX_VERSION)))
                 .valid("创建资源失败").getEntity().get("result");
@@ -63,7 +61,7 @@ public class ContractCreate {
                 + (ads.getContractMode() == ContractMode.CPT ? "_" + ads.getFlowEnum().getCode() : "");
 
         HttpExecutor.doRequest(
-                Task.post(URL + URLs.MAITIAN_ITEM_LIST)
+                Task.post(URL + Urls.MAITIAN_ITEM_LIST)
                         .cookie(basicService.getCookie()).param(Entity.of().put("uid", tag.getResourceId())))
                 .valid("获取资源条目失败").getEntity().cd("result/items").each(e -> {
             if (name.equals(e.get("itemName"))) {
@@ -76,7 +74,7 @@ public class ContractCreate {
         if (tag.getResourceItemId() != 0) return tag.getResourceItemId();
 
         return (int) HttpExecutor.doRequest(
-                Task.post(URL + URLs.MAITIAN_ITEM)
+                Task.post(URL + Urls.MAITIAN_ITEM)
                         .cookie(basicService.getCookie()).param(Entity.of(Params.MAITIAN_ITEM)
                         .put("resourceUid", tag.getResourceId())
                         .put("mediaUid", MEDIA_ID)
@@ -97,7 +95,7 @@ public class ContractCreate {
         if (tag.getRevenueId() != 0) return tag.getRevenueId();
         Date date = new Date();
         return (int) HttpExecutor.doRequest(
-                Task.post(URL + URLs.MAITIAN_REVENUE)
+                Task.post(URL + Urls.MAITIAN_REVENUE)
                         .cookie(basicService.getCookie()).param(Entity.of(Params.MAITIAN_REVENUE)
                         .put("resourceUid", tag.getResourceId())
                         .put("resourceItemUid", tag.getResourceItemId())
@@ -131,7 +129,7 @@ public class ContractCreate {
             entity.put("endTime", m - 1).add();
         }
         return (int) HttpExecutor.doRequest(
-                Task.post(URL + URLs.MAITIAN_RESERVE)
+                Task.post(URL + Urls.MAITIAN_RESERVE)
                         .cookie(basicService.getCookie()).param(entity))
                 .valid("资源预定失败，请检查当日是否排期已满")
                 .getEntity().get("result");
@@ -140,7 +138,7 @@ public class ContractCreate {
     private Integer getDealId(String name) {
         Pair<Integer, Integer> pair = new Pair<>();
         HttpExecutor.doRequest(
-                Task.post(URL + URLs.MAITIAN_DEAL_LIST)
+                Task.post(URL + Urls.MAITIAN_DEAL_LIST)
                         .cookie(basicService.getCookie()).param(Entity.of(Params.COMMON_PAGE).put("scheduleName", name)))
                 .valid("获取排期失败").getEntity().cd("result/list").each(e -> {
             if (String.valueOf(CONTRACT_ID).equals(String.valueOf(e.get("contractUid")))) {
@@ -161,7 +159,7 @@ public class ContractCreate {
         }
         Date date = new Date();
         return (int) HttpExecutor.doRequest(
-                Task.post(URL + URLs.MAITIAN_DEAL)
+                Task.post(URL + Urls.MAITIAN_DEAL)
                         .cookie(basicService.getCookie()).param(Entity.of(Params.MAITIAN_DEAL)
                         .put("name", name)
                         .put("scheduleTrafficType", ads.getDealMode().name())
@@ -177,7 +175,7 @@ public class ContractCreate {
 
     public int createDealItem(NewAds ads, ContractLog tag) {
         TaskResult result = HttpExecutor.doRequest(
-                Task.post(URL + URLs.MAITIAN_QUERY)
+                Task.post(URL + Urls.MAITIAN_QUERY)
                         .cookie(basicService.getCookie()).param(Entity.of().put("uid", String.valueOf(tag.getReservationId()))));
         result.valid("获取预定信息失败");
         Object obj = result.getEntity().get("result reserveDatingVOs");
@@ -199,7 +197,7 @@ public class ContractCreate {
                     v.put("serveBeginTime", v.get("beginTime"));
                     v.put("serveEndTime", v.get("endTime"));
                 });
-        return (int) HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_DEAL_ITEM)
+        return (int) HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_DEAL_ITEM)
                 .cookie(basicService.getCookie()).param(entity))
                 .valid("创建排期条目失败")
                 .getEntity().get("result");
@@ -207,7 +205,7 @@ public class ContractCreate {
 
     public List buildCreative(ContractLog tag) {
         Ad ad = tag.getAd();
-        TaskResult result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_TEMPLATE).cookie(basicService.getCookie())
+        TaskResult result = HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_TEMPLATE).cookie(basicService.getCookie())
                 .param(Entity.of().put("uid", ad.getPositionId())));
         result.valid("获取版位模板信息失败");
         Object template = result.getEntity().get("result");
@@ -236,121 +234,5 @@ public class ContractCreate {
             }
         }
         return Arrays.asList(creative.getHead());
-    }
-
-    public boolean deleteReservation(int id) {
-        TaskResult result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_RESERVATION_DELETE).cookie(basicService.getCookie()).param(Entity.of()
-                .put("uid", id).put("version", 0)));
-        if (!result.isSuccess()) {
-            result.error();
-            log.error("删除资源预定失败，预定id = {}", id);
-            return false;
-        }
-        return true;
-    }
-
-    public Result modify(ModifyAd modifyAd) {
-        return modify(modifyAd, null);
-    }
-
-    public Result modify(ModifyAd modifyAd, List<Integer> dealItemIds) {
-        Integer dealId = getDealId(modifyAd.getDealMode().name() + SUFFIX);
-        if (dealId == null) return Result.fail("该类排期不存在");
-
-        //获取排期下所有排期条目
-        List<DealItem> list = new ArrayList<>();
-        TaskResult result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_DETAIL).cookie(basicService.getCookie()).param(Entity.of()
-                .put("uid", String.valueOf(dealId))));
-        if (!result.isSuccess()) {
-            result.error();
-            return Result.fail("获取排期条目详情失败");
-        }
-        result.getEntity().cd("result/items").each(v -> {
-            DealItem t = v.to(DealItem.class);
-            t.setStatus("ON".equals(v.get("trafficSwitch code")));
-            t.setFee(ContractMode.of((String) v.get("billingMode value")));
-            list.add(t);
-        });
-        List<DealItem> items = new ArrayList<>();
-        List<DealItem> closeItems = new ArrayList<>();
-        int num = 0;
-        for (DealItem item : list) {
-            if (CommonUtil.contains(dealItemIds, item.getUid()) || item.getFee() == modifyAd.getContractMode() &&
-                    Objects.equals(modifyAd.getFlightName() + Settings.SUFFIX_VERSION, item.getResourceName())) {
-                if (item.getStatus() && modifyAd.getState() > 0) {
-                    closeItems.add(item);
-                    num++;
-                }
-                else if (modifyAd.getState() == -1 || modifyAd.getState() > 0 ^ item.getStatus()) {
-                    items.add(item);
-                }
-            }
-        }
-        if (modifyAd.getState() > 0) {
-            if (num + items.size() < modifyAd.getAmount()) return Result.fail("没有足够数量的广告");
-            if (num == modifyAd.getAmount()) Result.ok();
-            if (num > modifyAd.getAmount()) {
-                modifyAd.setState(0);
-                items = closeItems;
-            }
-            num = Math.abs(modifyAd.getAmount() - num);
-            while (items.size() > num) items.remove(0);
-        }
-        final AtomicBoolean error = new AtomicBoolean(false);
-        //错误只打点不抛出
-        for (DealItem item : items) {
-            result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_ITEM_CLOSE).cookie(basicService.getCookie()).param(Entity.of()
-                    .put("uid", item.getUid()).put("version", item.getVersion()).put("trafficSwitch", modifyAd.getState() > 0 ? "ON" : "CLOSE")));
-            if (!result.isSuccess()) {
-                error.set(true);
-                result.error();
-                log.error("开启/关闭排期条目流量失败，itemId = {}", item.getUid());
-                continue;
-            }
-
-            result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_AD_LIST).cookie(basicService.getCookie()).param(Entity.of(Params.MAITIAN_AD_LIST)
-                    .put("scheduleItemId", item.getUid())));
-            if (!result.isSuccess()) {
-                error.set(true);
-                result.error();
-                log.error("获取排期条目下广告位失败，itemId = {}", item.getUid());
-                continue;
-            }
-            result.getEntity().cd("result/list").each(v -> {
-                Integer adId = (Integer) v.get("id");
-                Integer version = (Integer) v.get("version");
-                if ("1001".equals(v.get("activeStatus code")) ^ (modifyAd.getState() > 0)) {
-                    TaskResult r = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_AD_CLOSE).cookie(basicService.getCookie()).param(Entity.of()
-                            .put("id", adId).put("version", version).put("status", modifyAd.getState() > 0 ? "1001" : "411")));
-                    if (!r.isSuccess()) {
-                        error.set(true);
-                        log.error("关闭广告失败，itemId = {}, adId = {}", item.getUid(), adId);
-                    }
-                    else version++;
-                }
-                if (modifyAd.getState() < 0) {
-                    TaskResult r = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_AD_DELETE).cookie(basicService.getCookie()).param(Entity.of()
-                            .put("uid", adId).put("version", version)));
-                    if (!r.isSuccess()) {
-                        error.set(true);
-                        r.error();
-                        log.error("删除广告失败，itemId = {}, adId = {}", item.getUid(), adId);
-                    }
-                }
-            });
-
-            if (modifyAd.getState() < 0) {
-                result = HttpExecutor.doRequest(Task.post(URL + URLs.MAITIAN_ITEM_DELETE).cookie(basicService.getCookie()).param(Entity.of()
-                        .put("uid", item.getUid()).put("version", item.getVersion() + 1)));
-                if (!result.isSuccess()) {
-                    error.set(true);
-                    result.error();
-                    log.error("删除排期条目失败，itemId = {}", item.getUid());
-                    continue;
-                }
-                if (!deleteReservation(item.getReservationId())) error.set(true);
-            }
-        }
-        return error.get() ? Result.fail("操作失败，请检查日志") : Result.ok();
     }
 }

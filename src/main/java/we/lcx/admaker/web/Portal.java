@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import we.lcx.admaker.common.Result;
 import we.lcx.admaker.common.entities.ModifyAd;
 import we.lcx.admaker.common.entities.NewAds;
+import we.lcx.admaker.manager.CommonManager;
 import we.lcx.admaker.manager.impl.BiddingManager;
 import we.lcx.admaker.manager.impl.ContractManager;
 import we.lcx.admaker.service.BasicService;
@@ -19,7 +20,7 @@ import javax.annotation.Resource;
 @Controller
 public class Portal {
     @Resource
-    private BasicService basicService;
+    private CommonManager commonManager;
 
     @Resource
     private BiddingManager biddingManager;
@@ -35,13 +36,20 @@ public class Portal {
     @GetMapping("/j/flight/{query}")
     @ResponseBody
     public Result query(@PathVariable String query) {
-        return Result.ok(basicService.queryFlight(query));
+        return commonManager.queryFlightByKeyword(query);
+    }
+
+    @GetMapping("/j/table")
+    @ResponseBody
+    public Result table(Integer flag) {
+        return commonManager.getAds(flag);
     }
 
     @PostMapping("/j/modify")
     @ResponseBody
     public Result modify(ModifyAd modifyAd) {
-        return contractManager.modify(modifyAd);
+        modifyAd.convert();
+        return modifyAd.getType() == 1 ? contractManager.modify(modifyAd) : biddingManager.modify(modifyAd);
     }
 
     @PostMapping("/j/create")

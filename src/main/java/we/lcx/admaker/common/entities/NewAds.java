@@ -29,8 +29,8 @@ public class NewAds {
 
     public void convert() {
         dealMode = DealMode.of(deal);
-        biddingMode = BiddingMode.of(fee);
-        contractMode = ContractMode.of(fee);
+        if (type == 1) contractMode = ContractMode.of(fee);
+        else biddingMode = BiddingMode.of(fee);
         flowEnum = FlowEnum.of(flow);
     }
 }

@@ -13,7 +13,7 @@ import we.lcx.admaker.common.TaskResult;
 import we.lcx.admaker.common.entities.Ad;
 import we.lcx.admaker.common.entities.Unit;
 import we.lcx.admaker.common.consts.Params;
-import we.lcx.admaker.common.consts.URLs;
+import we.lcx.admaker.common.consts.Urls;
 import we.lcx.admaker.common.enums.ShowType;
 import we.lcx.admaker.utils.HttpExecutor;
 import we.lcx.admaker.utils.CommonUtil;
@@ -56,14 +56,14 @@ public class BasicService {
                 .getHeaders().get(HttpHeaders.SET_COOKIE);
         if (!CollectionUtils.isEmpty(list)) cookie = list.get(0);
         else log.error("麦田cookie无效");
-        initAds();
+        refreshPositions();
     }
 
     public String getCookie() {
         return cookie;
     }
 
-    private void initAds() {
+    private void refreshPositions() {
         if (processing) return;
         synchronized (this) {
             if (processing) return;
@@ -71,7 +71,7 @@ public class BasicService {
         }
         try {
             Map<Integer, Ad> map = new HashMap<>();
-            for (AdPosition position : HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_POSITIONS).param(Entity.of(Params.YUNYING_POSITION)))
+            for (AdPosition position : HttpExecutor.doRequest(Task.post(URL_YUNYING + Urls.YUNYING_POSITIONS).param(Entity.of(Params.YUNYING_POSITION)))
                     .valid("获取版位失败").getEntity().toList(AdPosition.class)) {
                 if (position == null || !Objects.equals(position.getStatus(), 201) ||
                         Objects.equals(position.getPositionType(), 0) ||
@@ -86,7 +86,7 @@ public class BasicService {
                 ad.setPositionName(position.getName());
                 ad.setRefId(String.valueOf(position.getTemplateIds().get(0)));
                 ad.setMainType(Objects.equals(position.getPositionType(), 3) ? ShowType.TEXT : ShowType.PICTURE);
-                HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_TEMPLATES)
+                HttpExecutor.doRequest(Task.post(URL_YUNYING + Urls.YUNYING_TEMPLATES)
                         .param(Entity.of(Params.COMMON_QUERY).put("flightId", ad.getFlightId())))
                         .valid("获取模板展示类型失败").getEntity().cd("result").each(v -> {
                     if (Objects.equals(v.get("id"), ad.getRefId())) {
@@ -97,7 +97,7 @@ public class BasicService {
                 });
                 List<Unit> units = new ArrayList<>();
                 ad.setUnits(units);
-                HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_UNITS)
+                HttpExecutor.doRequest(Task.post(URL_YUNYING + Urls.YUNYING_UNITS)
                         .param(Entity.of(Params.COMMON_QUERY).put("uid", ad.getRefId())))
                         .valid("获取模板单元信息失败").getEntity().cd("result/templateUnit").each(k -> {
                     k.each(v -> {
@@ -121,12 +121,12 @@ public class BasicService {
     }
 
     public List<Map<String, String>> queryFlight(String keyword) {
-        List<Map<String, String>> results = new ArrayList<>();
-        List<FlightSearch> records = HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_FLIGHT_QUERY)
+        List<FlightSearch> records = HttpExecutor.doRequest(Task.post(URL_YUNYING + Urls.YUNYING_FLIGHT_QUERY)
                 .param(Entity.of(Params.YUNYING_FLIGHT_QUERY).put("nameLike", keyword)))
                 .valid("获取广告位数据失败")
                 .getEntity().toList(FlightSearch.class);
-        if (records == null) return results;
+        if (records == null) return null;
+        List<Map<String, String>> results = new ArrayList<>();
         for (FlightSearch rec : records) {
             if ("E7D5508C".equals(rec.getMediaCode()) && !rec.getName().contains("废弃") && !rec.getName().contains("无效")) {
                 Map<String, String> item = new HashMap<>();
@@ -142,7 +142,7 @@ public class BasicService {
         Ad ad = ads.get(newAds.getFlightId());
         if (ad != null) return ad;
         Entity entity = Entity.of(Params.YUNYING_CREATE);
-        HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_TEMPLATES)
+        HttpExecutor.doRequest(Task.post(URL_YUNYING + Urls.YUNYING_TEMPLATES)
                 .param(Entity.of(Params.COMMON_QUERY).put("flightId", newAds.getFlightId())))
                 .valid("获取模板单元失败")
                 .getEntity().cd("result").each(t -> {
@@ -153,45 +153,66 @@ public class BasicService {
             }
             return false;
         });
-        HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_CREATE)
+        HttpExecutor.doRequest(Task.post(URL_YUNYING + Urls.YUNYING_CREATE)
                 .param(entity.put("name", newAds.getFlightName() + CommonUtil.randomSuffix(4))
                         .put("flightUidList", Arrays.asList(newAds.getFlightId()))
                         .put("adType", newAds.getFlightType()))).valid("创建广告版位失败");
-        initAds();
+        refreshPositions();
         while ((ad = ads.get(newAds.getFlightId())) == null)
-            initAds();
+            refreshPositions();
         return ad;
     }
 
     public void checkFlight(int flightId) {
-        Entity entity = HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_FLIGHT).param(Entity.of(Params.YUNYING_FLIGHT)
+        Entity entity = HttpExecutor.doRequest(Task.post(URL_YUNYING + Urls.YUNYING_FLIGHT).param(Entity.of(Params.YUNYING_FLIGHT)
                 .put("adFlightId", String.valueOf(flightId)).put("dspId", DSP_ID))).valid("查询广告位开关状态失败").getEntity();
-        HttpExecutor.doRequest(Task.post(URL_YUNYING + URLs.YUNYING_STATUS).param(Entity.of(Params.YUNYING_STATUS)
+        HttpExecutor.doRequest(Task.post(URL_YUNYING + Urls.YUNYING_STATUS).param(Entity.of(Params.YUNYING_STATUS)
                 .put("id", entity.get("result list id")).put("adFlightId", flightId).put("dspId", DSP_ID)))
                 .valid("运营平台开启广告位失败");
     }
 
-    public boolean approveAds(NewAds ads, Set<Integer> adIds) {
-        String url;
-        String param;
-        if (ads.getType() == 1) {
-            url = URL_MAITIAN + URLs.MAITIAN_CREATIVE_QUERY;
-            param = Params.MAITIAN_CREATIVE_QUERY;
-        } else {
-            url = URL_MAISUI + URLs.MAISUI_CREATIVE_QUERY;
-            param = Params.MAISUI_CREATIVE_QUERY;
+    public List<Integer> executeAndApprove(List<Task> tasks, int adType) {
+        List<Integer> adIds = new ArrayList<>();
+        boolean flag = false;
+        for (TaskResult result : HttpExecutor.execute(tasks)) {
+            if (result.isSuccess())
+                adIds.add((Integer) result.getEntity().get("result"));
+            else flag = true;
         }
+        if (flag) return adIds;
+        return (adType == 1 ? approveContractAds(adIds) : approveBiddingAds(adIds)) ? null : adIds;
+    }
+
+    private boolean approveContractAds(List<Integer> adIds) {
         List<Task> tasks = new ArrayList<>();
         for (Integer id : adIds) {
-            Task task = Task.post(url);
-            if (ads.getType() == 1) task.cookie(cookie);
-            TaskResult result = HttpExecutor.doRequest(task.param(Entity.of(param)
-                    .put(ads.getType() == 1 ? "uid" : "adformId", id)));
+            TaskResult result = HttpExecutor.doRequest(Task.post(URL_MAITIAN + Urls.MAITIAN_CREATIVE_QUERY)
+                    .cookie(cookie)
+                    .param(Entity.of(Params.MAITIAN_CREATIVE_QUERY)
+                    .put("uid", id)));
             if (!result.isSuccess()) return false;
-            tasks.add(Task.post(URL_MAITIAN + URLs.COMMON_APPROVE).tag(id)
+            tasks.add(Task.post(URL_MAITIAN + Urls.COMMON_APPROVE).tag(id)
                     .param(Entity.of(Params.COMMON_APPROVE)
                             .put("creativeId", "MAISUI_" + result.getEntity()
-                                    .get(ads.getType() == 1 ? "result list id" : "result adCreativeList creativeId"))));
+                                    .get("result list id"))));
+        }
+        for (TaskResult r : HttpExecutor.execute(tasks)) {
+            if (!r.isSuccess()) return false;
+        }
+        return true;
+    }
+
+    private boolean approveBiddingAds(List<Integer> adIds) {
+        List<Task> tasks = new ArrayList<>();
+        for (Integer id : adIds) {
+            TaskResult result = HttpExecutor.doRequest(Task.post(URL_MAISUI + Urls.MAISUI_CREATIVE_QUERY)
+                    .param(Entity.of(Params.MAISUI_CREATIVE_QUERY)
+                    .put("adformId", id)));
+            if (!result.isSuccess()) return false;
+            tasks.add(Task.post(URL_MAITIAN + Urls.COMMON_APPROVE).tag(id)
+                    .param(Entity.of(Params.COMMON_APPROVE)
+                            .put("creativeId", "MAISUI_" + result.getEntity()
+                                    .get("result adCreativeList creativeId"))));
         }
         for (TaskResult r : HttpExecutor.execute(tasks)) {
             if (!r.isSuccess()) return false;

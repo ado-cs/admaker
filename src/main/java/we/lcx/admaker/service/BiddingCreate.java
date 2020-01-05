@@ -11,7 +11,7 @@ import we.lcx.admaker.common.entities.NewAds;
 import we.lcx.admaker.common.entities.Unit;
 import we.lcx.admaker.common.consts.Params;
 import we.lcx.admaker.common.consts.Settings;
-import we.lcx.admaker.common.consts.URLs;
+import we.lcx.admaker.common.consts.Urls;
 import we.lcx.admaker.common.enums.BiddingMode;
 import we.lcx.admaker.common.enums.ShowType;
 import we.lcx.admaker.utils.HttpExecutor;
@@ -35,7 +35,7 @@ public class BiddingCreate {
     //单位分，bidAmountMin和bidAmountMax单位为元
     private String getPrice(String planId, Integer uid, BiddingMode mode) {
         TaskResult result = HttpExecutor.doRequest(
-                Task.post(URL + URLs.MAISUI_PRICE)
+                Task.post(URL + Urls.MAISUI_PRICE)
                         .param(Entity.of(Params.MAISUI_PRICE)
                                 .put("adPlanId", planId).put("campaignPackageUid", uid).put("billingMode", mode.getValue())));
         result.valid("获取广告报价失败");
@@ -47,7 +47,7 @@ public class BiddingCreate {
         Ad ad = basicService.getAdFlight(ads);
         Entity entity = Entity.of(Params.MAISUI_CREATE);
         entity.put("adPlanId", PLAN_ID)
-                .put("adformName", ad.getFlightName())
+                .put("adformName", ad.getFlightName() + "_" + ads.getBiddingMode().name() + "_" + Settings.SPECIAL_NAME)
                 .put("campaignPackageId", ad.getPositionId())
                 .put("bidAmountMin", "100")
                 .put("bidAmountMax", "100")

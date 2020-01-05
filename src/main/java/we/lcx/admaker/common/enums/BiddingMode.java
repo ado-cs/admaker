@@ -21,6 +21,10 @@ public enum BiddingMode {
         return null;
     }
 
+    public int getCode() {
+        return code;
+    }
+
     public int getValue() {
         return value;
     }

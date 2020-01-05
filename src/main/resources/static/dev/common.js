@@ -1,16 +1,28 @@
-function msgBox(title, content, approve, deny) {
+function sleep(time) {
+    return new Promise((resolve) => setTimeout(resolve, time));
+}
+
+function message(title, content, success) {
+    let html = '<div class="ui {} message transition hidden"><i class="close icon"></i><div class="header">{}</div><p>{}</p></div>';
+    html = format(html, [success ? 'positive' : 'negative', title, content]);
+    let p = $('#messages');
+    p.append(html);
+    p = p.children('div:last');
+    p.children('.close').bind('click', function () {
+        p.transition({animation: 'fade down', duration: 300})
+    });
+    p.transition('fade left');
+    sleep(5000).then(() => {
+        if (p.hasClass('visible')) p.transition({animation: 'fade down', duration: 600})
+    })
+}
+
+function msgBox(title, content, approve) {
     $('.modal .header').html(title);
-    $('.modal .description').html('<p>' + content + '</p>');
-    $('.modal .actions').html(approve && deny ? '<div class="ui negative deny button">取消</div>' +
-        '<button class="ui positive approve right labeled icon button"><i class="check icon"></i>重试</button>' :
-        '<div class="ui primary deny button">确认</div>');
+    $('.modal .description').html(content);
     let modal = $('.modal');
-    if (approve && deny)
-        modal.modal({
-            onDeny: deny,
-            onApprove: approve
-        });
-    modal.modal('show')
+    modal.modal({onApprove: approve});
+    modal.modal('show');
 }
 
 function parseDate(date, connector) {
@@ -83,7 +95,7 @@ function setDisabled(names, flag) {
 
 function contains(array, val) {
     for (let v of array) {
-        if (v == val) return true;
+        if (v === val) return true;
     }
     return false;
 }
@@ -121,6 +133,7 @@ function composeData() {
     }
     if (!data.dspId) data.dspId = 10101;
     if (!data.flow) data.flow = 1;
+    else data.flow = parseInt(data.flow);
     if (parseInt(data.fee) === 1 && amount > 1) {
         if (amount === 2 && contains([1, 4, 6, 9, 10], data.flow)) data.flow = 2;
         else if (amount === 3 && !contains([3, 5, 7], data.flow)) data.flow = 3;
@@ -206,14 +219,21 @@ function selectionChanged() {
     }
 }
 
-let traceId = "";
+function getRow(data) {
+    let r = [data.name, data.pdbCptOn + data.pdbCptOff, data.pdbCptOn, data.pdbCpmOn + data.pdbCpmOff, data.pdbCpmOn,
+        data.pdOn + data.pdOff, data.pdOn, data.bottomOn + data.bottomOff, data.bottomOn, 0,
+        data.cpcOn + data.cpcOff, data.cpcOn, data.cpmOn + data.cpmOff, data.cpmOn];
+    r[9] = r[1] + r[3] + r[5] + r[7];
+    r.push(r[10] + r[12]);
+    return r;
+}
 
 function initEvents() {
     $.fn.api.settings.api = {
         'create': '/j/create',
+        'modify': '/j/modify',
         'query': '/j/flight/{query}',
-        'cancel': '/j/cancel',
-        'modify': '/j/modify'
+        'table': '/j/table'
     };
     $('.ui.selection.dropdown').dropdown();
     $('.ui.dropdown.button').dropdown();
@@ -259,65 +279,22 @@ function initEvents() {
         beforeSend: function (settings) {
             let data = composeData();
             if (!data) return false;
-            if (traceId) data.traceId = traceId;
             settings.data = data;
             $('#create').addClass('loading');
             return settings;
         },
         onResponse: function (response) {
             $('#create').removeClass('loading');
-            traceId = "";
             if (response) {
-                if (response.success) msgBox('创建成功', '广告单创建成功！');
-                else {
-                    traceId = response.results;
-                    msgBox('创建失败', response.message, function () {
-                            $('#create').click()
-                        }, function () {
-                            $(document).api({
-                                on: 'now',
-                                action: 'cancel',
-                                method: 'post',
-                                data: {traceId}
-                            })
-                        }
-                    );
-                }
-            } else msgBox('创建失败', '无响应！');
+                if (response.success) message('创建成功', '广告单创建成功！', true);
+                else message('创建失败', response.message);
+            } else message('创建失败', '无响应！');
             return response;
         },
         onError: function (errorMessage) {
-            msgBox('创建失败', errorMessage);
+            message('创建失败', errorMessage);
         }
     });
-    const buttons = ['open', 'close', 'delete'];
-
-    for (let i in buttons) {
-        $('#' + buttons[i]).api({
-            action: 'modify',
-            method: 'post',
-            beforeSend: function (settings) {
-                let data = composeModify();
-                if (!data) return false;
-                data.state = 1 - i;
-                console.info(data.state);
-                settings.data = data;
-                $('#create').addClass('loading');
-                return settings;
-            },
-            onResponse: function (response) {
-                $('#create').removeClass('loading');
-                if (response) {
-                    if (response.success) msgBox('成功', '操作完成！');
-                    else msgBox('失败', response.message);
-                } else msgBox('失败', '无响应！');
-                return response;
-            },
-            onError: function (errorMessage) {
-                msgBox('失败', errorMessage);
-            }
-        });
-    }
 
 }
 
@@ -327,10 +304,124 @@ function initData() {
     $('input[name="end"]').val('2021-12-31');
 }
 
+function bindTds(idx) {
+    const deal1 = ['PDB-CPT', 'PDB-CPM', 'PD', '抄底'];
+    const deal2 = ['CPC', 'CPM'];
+    let tds = idx ? $('tbody').children('tr').eq(idx).nextAll().children('td') : $('td');
+    tds.bind('click', function () {
+        let self = $(this);
+        let col = self.index();
+        if (contains([0, 9, 14], col)) return;
+        let val = parseInt(self.html());
+        if (isNaN(val)) return;
+        let flightName = self.prevAll().eq(0).html();
+        let type = col < 9 ? 1 : 2;
+        let deal = col > 4 ? (col > 6 ? 3 : 2) : 1;
+        let fee = contains([1, 2, 7, 8, 10, 11], col) ? 1 : 2;
+        let remove = col % 2 === (col < 9 ? 1 : 0);
+        let title = (col < 9 ? '合约 ' + deal1[Math.floor((col - 1) / 2)] :
+            '竞价 ' + deal2[Math.floor((col - 10) / 2)]) + (remove ? ' 广告总数' : ' 开启数量');
+        msgBox(title, '<div class="ui fluid input"><input id="number" type="number" value="' + val + '"></div>',
+            function () {
+                let amount = parseInt($('#number').val());
+                if (isNaN(amount) || amount < 0) {
+                    message('操作失败', '请输入合法的数量');
+                    return;
+                }
+                $(document).api({
+                    on: 'now',
+                    action: 'modify',
+                    method: 'post',
+                    beforeSend: function (settings) {
+                        settings.data = {flightName, type, deal, fee, remove, amount};
+                        self.html(amount);
+                        return settings;
+                    },
+                    onResponse: function (response) {
+                        if (response) {
+                            if (response.success) {
+                                message('操作完成', title + '修改成功', true);
+                                initTable(type);
+                                return
+                            } else message('操作失败', response.message);
+                        } else message('操作失败', '无响应');
+                        self.html(val);
+                        return response;
+                    },
+                    onError: function (errorMessage) {
+                        message('操作失败', errorMessage);
+                        self.html(val);
+                    }
+                })
+            })
+    })
+}
+
+function initTable(flag) {
+    $(document).api({
+        on: 'now',
+        action: 'table',
+        method: 'get',
+        beforeSend: function (settings) {
+            settings.data = {flag};
+            return settings
+        },
+        onResponse: function (response) {
+            if (response) {
+                if (response.success) {
+                    let total = [];
+                    for (let i = 0; i < 15; i++) {
+                        total.push(0);
+                    }
+                    let rows = {};
+                    let tb = $('tbody');
+                    let idx = 0;
+                    tb.children('tr').each(function () {
+                        let name = $(this).children('td:first').html();
+                        rows[name] = $(this);
+                        idx += 1;
+                        if (!response.results.hasOwnProperty(name)) {
+                            $(this).children('td').each(function (i) {
+                                total[i] += i ? parseInt($(this).html()) : 1;
+                            })
+                        }
+                    });
+                    let flag = false;
+                    for (let data of response.results) {
+                        let r = getRow(data);
+                        total[0] += 1;
+                        for (let i = 1; i < 15; i++) {
+                            total[i] += r[i];
+                        }
+                        if (rows.hasOwnProperty(data.name)) {
+                            rows[data.name].children('td').each(function (i) {
+                                $(this).html(r[i])
+                            });
+                        } else {
+                            flag = true;
+                            let html = '<tr><td class="left aligned">' + r[0] + '</td>';
+                            for (let i = 1; i < 15; i++) {
+                                html += '<td>' + r[i] + '</td>'
+                            }
+                            tb.append(html + '</tr>')
+                        }
+                    }
+                    $('tfoot tr').children('th').each(function (i) {
+                        $(this).html(total[i] + (i ? '' : ' 项'))
+                    });
+                    if (flag) bindTds(idx)
+                } else message('更新失败', response.message);
+            } else message('更新失败', '无响应');
+            return response
+        },
+        onError: function (errorMessage) {
+            message('更新失败', errorMessage);
+        }
+    })
+}
+
 $(document).ready(() => {
     initEvents();
-    initData()
+    initData();
+    //initTable(3)
 });
-
-
-

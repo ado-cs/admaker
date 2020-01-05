@@ -3,7 +3,7 @@ package we.lcx.admaker.common.consts;
 /**
  * Created by LinChenxiao on 2019/12/12 20:00
  **/
-public interface URLs {
+public interface Urls {
     String YUNYING_POSITIONS = "position/list";
     String YUNYING_TEMPLATES = "flight/getFlightTemplate";
     String YUNYING_UNITS = "template/single";
@@ -15,7 +15,10 @@ public interface URLs {
     String MAISUI_PRICE = "campaignPackage/getAdvisedPrice";
     String MAISUI_CREATE = "adform/create";
     String MAISUI_CREATIVE_QUERY = "adform/query/info";
+    String MAISUI_AD_LIST = "adform/query/list";
     String MAISUI_OPEN = "adform/update/serve";
+    String MAISUI_PAUSE = "adform/update/pause";
+    String MAISUI_DELETE = "adform/delete";
 
     String MAITIAN_RESOURCE = "resource/list";
     String MAITIAN_RESOURCE_NEW = "resource/create";

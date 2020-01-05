@@ -80,6 +80,10 @@ public class CommonUtil {
         }
     }
 
+    public static String toDateString(Date date) {
+        return FORMAT.format(date);
+    }
+
     public static long timeOfToday() {
         Calendar calendar = Calendar.getInstance();
         return parseTime(calendar.get(Calendar.YEAR)  + "-" + calendar.get(Calendar.MONTH) + "-" + calendar.get(Calendar.DATE));
