@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import we.lcx.admaker.common.VisibleException;
 import we.lcx.admaker.common.entities.NewAds;
 import we.lcx.admaker.common.json.*;
 import we.lcx.admaker.common.Entity;
@@ -164,10 +165,11 @@ public class BasicService {
     }
 
     public void checkFlight(int flightId) {
-        Entity entity = HttpExecutor.doRequest(Task.post(URL_YUNYING + Urls.YUNYING_FLIGHT).param(Entity.of(Params.YUNYING_FLIGHT)
-                .put("adFlightId", String.valueOf(flightId)).put("dspId", DSP_ID))).valid("查询广告位开关状态失败").getEntity();
+        Object id = HttpExecutor.doRequest(Task.post(URL_YUNYING + Urls.YUNYING_FLIGHT).param(Entity.of(Params.YUNYING_FLIGHT)
+                .put("adFlightId", String.valueOf(flightId)).put("dspId", DSP_ID))).valid("查询广告位开关状态失败").getEntity().get("result list id");
+        if (id == null) throw new VisibleException("内部DSP未接入该广告位");
         HttpExecutor.doRequest(Task.post(URL_YUNYING + Urls.YUNYING_STATUS).param(Entity.of(Params.YUNYING_STATUS)
-                .put("id", entity.get("result list id")).put("adFlightId", flightId).put("dspId", DSP_ID)))
+                .put("id", id).put("adFlightId", flightId).put("dspId", DSP_ID)))
                 .valid("运营平台开启广告位失败");
     }
 

@@ -279,7 +279,11 @@ public class Entity {
         Object obj = null;
         for (int i = 0; i < path.length; i++) {
             obj = map.get(path[i]);
-            if (obj instanceof List && i < path.length - 1) obj = ((List) obj).get(0);
+            if (obj instanceof List && i < path.length - 1) {
+                List list = (List) obj;
+                if (list.size() == 0) return null;
+                obj = ((List) obj).get(0);
+            }
             if (obj instanceof Map) map = (Map) obj;
             else if (obj == null || i < path.length - 1) return null;
         }

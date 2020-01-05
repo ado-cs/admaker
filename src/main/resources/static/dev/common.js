@@ -157,17 +157,14 @@ function composeData() {
     return data
 }
 
-function selectionChanged() {
-    let self = $(this);
+function selectionChanged(self) {
     const names = {'flightId': 'type', 'type': 'fee', 'deal': 'fee'};
     let name = self.attr('name');
     let sel = self.val();
     let next = null;
-    let val = null;
-    if (names.hasOwnProperty(name)) {
+    if (names.hasOwnProperty(name))
         next = $(format('input[name="{}"]', names[name]));
-        val = next.val()
-    }
+
     if (name === 'flightId') {
         let v = divide(sel, true);
         let opt = [];
@@ -182,7 +179,6 @@ function selectionChanged() {
             setDisabled('deal', true);
             fillOptions('fee', ['CPC', 'CPM'])
         }
-        val = '';
     } else if (name === 'deal') {
         if (sel === '1') {
             fillOptions('fee', ['CPT', 'CPM'])
@@ -214,9 +210,7 @@ function selectionChanged() {
         }
     }
 
-    if (next != null) {
-        if (val !== next.val()) selectionChanged(next)
-    }
+    if (next != null) selectionChanged(next)
 }
 
 function getRow(data) {
@@ -238,7 +232,9 @@ function initEvents() {
     $('.ui.selection.dropdown').dropdown();
     $('.ui.dropdown.button').dropdown();
     for (let t of ['flightId', 'type', 'deal', 'fee'])
-        $(format('input[name="{}"]', t)).bind('change', selectionChanged);
+        $(format('input[name="{}"]', t)).bind('change', function () {
+            selectionChanged($(this))
+        });
     $('#settings').bind('click', function () {
         let p = $('#more');
         if (p.hasClass('in')) return;
@@ -307,7 +303,7 @@ function initData() {
 function bindTds(idx) {
     const deal1 = ['PDB-CPT', 'PDB-CPM', 'PD', '抄底'];
     const deal2 = ['CPC', 'CPM'];
-    let tds = idx ? $('tbody').children('tr').eq(idx).nextAll().children('td') : $('td');
+    let tds = idx ? $('tbody').children('tr').eq(idx - 1).nextAll().children('td') : $('td');
     tds.bind('click', function () {
         let self = $(this);
         let col = self.index();
@@ -316,7 +312,7 @@ function bindTds(idx) {
         if (isNaN(val)) return;
         let flightName = self.prevAll('td:last').html();
         let type = col < 9 ? 1 : 2;
-        let deal = col > 4 ? (col > 6 ? 3 : 2) : 1;
+        let deal = col > 4 ? (col > 6 ? 2 : 3) : 1;
         let fee = contains([1, 2, 7, 8, 10, 11], col) ? 1 : 2;
         let remove = col % 2 === (col < 9 ? 1 : 0);
         let title = (col < 9 ? '合约 ' + deal1[Math.floor((col - 1) / 2)] :
@@ -377,16 +373,16 @@ function initTable(flag) {
                     let rows = {};
                     let tb = $('tbody');
                     let idx = 0;
+                    let removeItems = [];
                     tb.children('tr').each(function () {
-                        let name = $(this).children('td:first').html();
-                        rows[name] = $(this);
-                        idx += 1;
-                        if (!response.results.hasOwnProperty(name)) {
-                            $(this).children('td').each(function (i) {
-                                total[i] += i ? parseInt($(this).html()) : 1;
-                            })
+                        if (response.results.hasOwnProperty(name)) {
+                            let name = $(this).children('td:first').html();
+                            rows[name] = $(this);
+                            idx += 1;
                         }
+                        else $(this).remove()
                     });
+                    for (let item of removeItems) item.remove();
                     let flag = false;
                     for (let key in response.results) {
                         let data = response.results[key];

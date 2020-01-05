@@ -97,7 +97,7 @@ public class ContractModify implements Modify {
     }
 
     private Integer getIndex(DealMode deal, ContractMode fee) {
-        return DealMode.PDB == deal ? fee.getCode() : Math.abs(DealMode.PD.getCode() - deal.getCode()) * 4;
+        return DealMode.PDB == deal ? fee.getCode() : (DealMode.PD == deal ? 3 : 4);
     }
 
     private void fillDealItemInfo(Integer dealId) {
