@@ -67,7 +67,7 @@ public class ContractManager implements AdManager {
             if (!DSP_ID.equals(ads.getDspId())) continue;
             Entity entity = Entity.of(Params.MAITIAN_CREATE);
             entity.put("name", ads.getFlightName() + "_" + ads.getDealMode().name() + "_" + ads.getContractMode().name()
-                    + "_" + Settings.SPECIAL_NAME + CommonUtil.randomSuffix(6))
+                    + CommonUtil.randomSuffix(6))
                     .put("execPeriods", Arrays.asList(CommonUtil.parseTime(ads.getBegin()), CommonUtil.parseTime(ads.getEnd()) + Settings.DAY - 1))
                     .put("creatives", tag.getCreative())
                     .cd("scheduleItemInfo")

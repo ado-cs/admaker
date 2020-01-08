@@ -47,7 +47,7 @@ public class BiddingCreate {
         Ad ad = basicService.getAdFlight(ads);
         Entity entity = Entity.of(Params.MAISUI_CREATE);
         entity.put("adPlanId", PLAN_ID)
-                .put("adformName", ad.getFlightName() + "_" + ads.getBiddingMode().name() + "_" + Settings.SPECIAL_NAME)
+                .put("adformName", ad.getFlightName() + "_" + ads.getBiddingMode().name())
                 .put("campaignPackageId", ad.getPositionId())
                 .put("bidAmountMin", "100")
                 .put("bidAmountMax", "100")
