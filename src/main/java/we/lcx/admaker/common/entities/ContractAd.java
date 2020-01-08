@@ -11,11 +11,22 @@ import java.util.concurrent.atomic.AtomicInteger;
  **/
 @Data
 public class ContractAd {
-    private Integer id;
     private String name;
+    private Integer positionId;
+    private Integer adId;
+    private Integer adVersion;
+    private Boolean adStatus;
     private Integer dealId;
-    private String dealItemId;
-    private Boolean active;
+    private Integer dealItemId;
+    private Integer reservationId;
+    private Integer version;
+    private Boolean status;
     private DealMode dealMode;
     private ContractMode contractMode;
+    private Integer dspId;
+
+    public Integer index() {
+        return dealMode == DealMode.PDB ? contractMode == ContractMode.CPT ? 1 : 3 :
+                dealMode == DealMode.PD ? 5 : 7;
+    }
 }

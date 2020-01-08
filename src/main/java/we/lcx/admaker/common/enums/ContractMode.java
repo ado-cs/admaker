@@ -17,7 +17,8 @@ public enum ContractMode {
         this.traffic = traffic;
     }
 
-    public static ContractMode of(int code) {
+    public static ContractMode of(Integer code) {
+        if (code == null) return null;
         for (ContractMode mode : values())
             if (mode.code == code) return mode;
         return null;

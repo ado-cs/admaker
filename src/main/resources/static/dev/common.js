@@ -2,15 +2,12 @@ function sleep(time) {
     return new Promise((resolve) => setTimeout(resolve, time));
 }
 
-function message(title, content, success) {
-    let html = '<div class="ui {} message transition hidden"><i class="close icon"></i><div class="header">{}</div><p>{}</p></div>';
-    html = format(html, [success ? 'positive' : 'negative', title, content]);
+function message(content, success) {
+    let html = '<div class="ui {} message transition hidden"><p>{}</p></div>';
+    html = format(html, [success ? 'positive' : 'negative', content]);
     let p = $('#messages');
     p.append(html);
     p = p.children('div:last');
-    p.children('.close').bind('click', function () {
-        p.transition({animation: 'fade down', duration: 300})
-    });
     p.transition('fade left');
     sleep(8000).then(() => {
         if (p.hasClass('visible')) p.transition({animation: 'fade down', duration: 600})
@@ -18,10 +15,17 @@ function message(title, content, success) {
 }
 
 function msgBox(title, content, approve) {
-    $('.modal .header').html(title);
-    $('.modal .description').html(content);
-    let modal = $('.modal');
-    modal.modal({closable: false, onApprove: approve});
+    let modal = $('.mini.modal');
+    modal.children('.header').html(title);
+    $('.mini.modal .description').html(content);
+    modal.children('.actions').html(approve ?
+        '<div class="ui negative deny button">取消</div><div class="ui positive right labeled icon approve button">确认<i class="checkmark icon"></i></div>' :
+        '<div class="ui primary approve button">确认</div>');
+    let props = {closable: false, onApprove: approve};
+    if (approve && content.indexOf('<input') > 0) props.onVisible = function() {
+        $('.mini.modal input:first').select()
+    };
+    modal.modal(props);
     modal.modal('show');
 }
 
@@ -100,7 +104,7 @@ function contains(array, val) {
     return false;
 }
 
-function composeModify() {
+function composeData() {
     let data = {};
     $('input').each(function () {
         let name = $(this).attr('name');
@@ -115,11 +119,6 @@ function composeModify() {
     data.flightName = $('input[name="flightId"]').nextAll('.text').html();
     if (!data.deal) data.deal = 1;
     if (!data.fee) data.fee = parseInt(data.type) === 1 && parseInt(data.deal) === 2 ? 2 : 1;
-    return data
-}
-
-function composeData() {
-    let data = composeModify();
     data.flightType = divide(data.flightId, true);
     data.flightId = divide(data.flightId);
     if (!data.flightId) {
@@ -139,7 +138,7 @@ function composeData() {
         else if (amount === 3 && !contains([3, 5, 7], data.flow)) data.flow = 3;
         else if (amount === 4 && !contains([5, 7], data.flow)) data.flow = 5;
         else if (amount === 5 && !contains([7], data.flow)) data.flow = 7;
-        else {
+        else if (amount > 5) {
             msgBox('提示', '广告数量与CPT流量冲突');
             return false
         }
@@ -213,16 +212,10 @@ function selectionChanged(self) {
     if (next != null) selectionChanged(next)
 }
 
-function getRow(data) {
-    let r = [data.name, data.pdbCptOn + data.pdbCptOff, data.pdbCptOn, data.pdbCpmOn + data.pdbCpmOff, data.pdbCpmOn,
-        data.pdOn + data.pdOff, data.pdOn, data.bottomOn + data.bottomOff, data.bottomOn, 0,
-        data.cpcOn + data.cpcOff, data.cpcOn, data.cpmOn + data.cpmOff, data.cpmOn];
-    r[9] = r[1] + r[3] + r[5] + r[7];
-    r.push(r[10] + r[12]);
-    return r;
-}
+let refreshFlag = 0;
 
 function initEvents() {
+    $('.menu .item').tab();
     $.fn.api.settings.api = {
         'create': '/j/create',
         'modify': '/j/modify',
@@ -276,22 +269,34 @@ function initEvents() {
             let data = composeData();
             if (!data) return false;
             settings.data = data;
-            $('#create').addClass('loading');
+            message('广告单创建请求已提交', true);
             return settings;
         },
         onResponse: function (response) {
-            $('#create').removeClass('loading');
             if (response) {
-                if (response.success) message('创建成功', '广告单创建成功！', true);
-                else message('创建失败', response.message);
-            } else message('创建失败', '无响应！');
+                if (response.success) {
+                    refreshFlag = 3;
+                    message('广告单创建成功！', true);
+                }
+                else message(response.message);
+            } else message('无响应！');
             return response;
         },
         onError: function (errorMessage) {
-            message('创建失败', errorMessage);
+            message(errorMessage);
         }
     });
-
+    $('.menu .item[data-tab="second"]').bind('click', function () {
+        initTable(refreshFlag);
+        refreshFlag = 0;
+    });
+    let messages = $('#messages');
+    $(window).scroll(function(){
+        let t = $(document).scrollTop();
+        if (parseInt(t) > 26)
+            messages.css('top', t);
+        else messages.css('top', '26px');
+    })
 }
 
 function initData() {
@@ -300,58 +305,189 @@ function initData() {
     $('input[name="end"]').val('2021-12-31');
 }
 
-function bindTds(idx) {
-    const deal1 = ['PDB-CPT', 'PDB-CPM', 'PD', '抄底'];
-    const deal2 = ['CPC', 'CPM'];
-    let tds = idx ? $('tbody').children('tr').eq(idx - 1).nextAll().children('td') : $('td');
-    tds.bind('click', function () {
-        let self = $(this);
-        let col = self.index();
-        if (contains([0, 9, 14], col)) return;
-        let val = parseInt(self.html());
-        if (isNaN(val)) return;
-        let flightName = self.prevAll('td:last').html();
-        let type = col < 9 ? 1 : 2;
-        let deal = col > 4 ? (col > 6 ? 2 : 3) : 1;
-        let fee = contains([1, 2, 7, 8, 10, 11], col) ? 1 : 2;
-        let remove = col % 2 === (col < 9 ? 1 : 0);
-        let title = (col < 9 ? '合约 ' + deal1[Math.floor((col - 1) / 2)] :
-            '竞价 ' + deal2[Math.floor((col - 10) / 2)]) + (remove ? ' 广告总数' : ' 开启数量');
-        msgBox(title, '<div class="ui fluid input"><input id="number" type="number" value="' + val + '"></div>',
-            function () {
-                let amount = parseInt($('#number').val());
-                if (isNaN(amount) || amount < 0) {
-                    message('操作失败', '请输入合法的数量');
-                    return;
+let tableData = {};
+
+function fillTable() {
+    let total = [];
+    for (let i = 0; i < 15; i++) total.push(0);
+    let amount = [];
+    for (let i = 0; i < 15; i++) amount.push(0);
+    let idx = 0;
+    let rows = {};
+    let tbody = $('.ui.tab table tbody');
+    tbody.children('tr').each(function () {
+        let name = $(this).children('td:first').html();
+        if (tableData.hasOwnProperty(name)) {
+            rows[name] = $(this);
+            idx += 1;
+        }
+        else $(this).remove()
+    });
+    let flag = false;
+    for (let name in tableData) {
+        let data = tableData[name];
+        total[0] += 1;
+        amount[0] = name;
+        let sum1 = 0;
+        let sum2 = 0;
+        for (let i = 1; i < 15; i++) {
+            let num = 0;
+            if (data.hasOwnProperty(i)) {
+                for (let id in data[i])
+                    num += data[i][id]
+            }
+            if (i < 9 && i % 2 === 1) sum1 += num;
+            else if (i > 9 && i % 2 === 0) sum2 += num;
+            total[i] += num;
+            amount[i] = num;
+        }
+        amount[9] = sum1;
+        amount[14] = sum2;
+        total[9] += sum1;
+        total[14] += sum2;
+
+        if (rows.hasOwnProperty(name)) {
+            rows[name].children('td').each(function (i) {
+                $(this).html(amount[i])
+            });
+        }
+        else {
+            flag = true;
+            let html = '<tr><td class="left aligned">' + amount[0] + '</td>';
+            for (let i = 1; i < 15; i++)
+                html += '<td>' + amount[i] + '</td>';
+            tbody.append(html + '</tr>')
+        }
+    }
+    let html = '<tr><th class="left aligned">' + total[0] + ' 项</th>';
+    for (let i = 1; i < 15; i++)
+        html += '<th>' + total[i] + '</th>';
+    $('.ui.tab table tfoot').html(html + '</tr>');
+    bindThs();
+    if (flag) bindTds(idx)
+}
+
+function showDsp(title, idx, data) {
+    let table = '<table class="ui celled table"><thead><tr><th>DspId</th><th>';
+    let tableEnd = '</tbody></table>';
+    if (idx) {
+        table += '数量</th></tr></thead><tbody>';
+        let rows = tableData[data.name][idx];
+        for (let id in rows) {
+            table += '<tr><td>' + id +
+                '</td><td><input type="text" style="border-width: 0" value="' + rows[id] + '"></td></tr>'
+        }
+        msgBox(title, table + tableEnd, function () {
+            $('.modal table tbody tr').each(function () {
+                let id = parseInt($(this).children('td:first').html());
+                let amount = parseInt($(this).children('td:last').children('input').val());
+                if (rows[id] !== amount) {
+                    data.dspId = id;
+                    data.amount = amount;
+                    doModify(data)
                 }
-                if (amount === val) return;
-                $(document).api({
-                    on: 'now',
-                    action: 'modify',
-                    method: 'post',
-                    beforeSend: function (settings) {
-                        settings.data = {flightName, type, deal, fee, remove, amount};
-                        self.html(amount);
-                        return settings;
-                    },
-                    onResponse: function (response) {
-                        if (response) {
-                            if (response.success) {
-                                message('操作完成', title + '修改成功', true);
-                                initTable(type);
-                                return
-                            } else message('操作失败', response.message);
-                        } else message('操作失败', '无响应');
-                        self.html(val);
-                        return response;
-                    },
-                    onError: function (errorMessage) {
-                        message('操作失败', errorMessage);
-                        self.html(val);
-                    }
-                })
             })
+        })
+    }
+    else {
+        // 暂不支持
+        // data = {name: title, type: 1};
+        // let rows = tableData[data.name];
+        // for (let i = 1; i < 9; i++) {
+        //
+        // }
+    }
+}
+
+function doModify(data) {
+    $(document).api({
+        on: 'now',
+        action: 'modify',
+        method: 'post',
+        beforeSend: function (settings) {
+            settings.data = data;
+            return settings;
+        },
+        onResponse: function (response) {
+            if (response) {
+                if (response.success) initTable(data.type);
+                else message(response.message);
+            } else message('无响应');
+            return response;
+        },
+        onError: function (errorMessage) {
+            message(errorMessage);
+        }
     })
+}
+
+function quzModify(content, data) {
+    msgBox('请确认', content, function () {
+        doModify(data)
+    })
+}
+
+function numModify(title, data) {
+    msgBox(title, '<div class="ui fluid input"><input type="number" value="' + data.amount + '"></div>', function () {
+        let val = parseInt($('.modal input').val());
+        if (data.amount > val) {
+            data.amount = val;
+            doModify(data);
+        }
+    })
+}
+
+function preModify(self, name) {
+    let idx = self.index();
+    if (!idx) {
+        showDsp(name);
+        return;
+    }
+    const text1 = ['PDB-CPT', 'PDB-CPM', 'PD', '抄底', '合约'];
+    const text2 = ['CPC', 'CPM', '竞价'];
+    let amount = parseInt(self.html());
+    let type = idx < 10 ? 1 : 2;
+    let remove = idx % 2 === (idx < 10 ? 1 : 0);
+    if (remove && amount <= 0) return;
+    if (!remove) {
+        let num = parseInt(self.prev().html());
+        if (num === 0) return;
+        else if (name == null) amount = amount ? 0 : num;
+    }
+    let data = {name, type, remove, amount};
+    if (idx !== 9 && idx !== 14) {
+        if (type === 1) data.deal = idx > 4 ? (idx > 6 ? 2 : 3) : 1;
+        data.fee = contains([1, 2, 7, 8, 10, 11], idx) ? 1 : 2;
+        if (name) {
+            let text = (remove ? '删除' : '开启') + '"' + name + '"';
+            if (idx < 9) showDsp(text + text1[Math.floor((idx - 1) / 2)], idx, data);
+            else numModify(text + text2[Math.floor((idx - 10) / 2)], data);
+            return;
+        }
+    }
+    if (remove) data.amount = 0;
+    quzModify('确认' + (remove ? '<b>删除</b>' : (amount ? '开启' : '关闭')) +
+        '所有' + (idx < 10 ? text1[Math.floor((idx - 1) / 2)] + "排期和" :
+            text2[Math.floor((idx - 10) / 2)]) + "广告？", data)
+}
+
+function bindThs() {
+    let th = $('.ui.tab table tfoot tr th');
+    th.bind('click', function () {
+        preModify($(this))
+    })
+}
+
+function bindTds(idx) {
+    let tds = idx ? $('.ui.tab table tbody').children('tr').eq(idx - 1).nextAll().children('td') : $('td');
+    tds.each(function () {
+        let self = $(this);
+        let idx = self.index();
+        let name = idx ? self.prevAll('td:last').html() : self.html();
+        self.bind('click', function () {
+            preModify(self, name)
+        })
+    });
 }
 
 function initTable(flag) {
@@ -360,60 +496,20 @@ function initTable(flag) {
         action: 'table',
         method: 'get',
         beforeSend: function (settings) {
-            settings.data = {flag};
+            settings.data = {flag: flag ? flag : 0};
             return settings
         },
         onResponse: function (response) {
             if (response) {
                 if (response.success) {
-                    let total = [];
-                    for (let i = 0; i < 15; i++) {
-                        total.push(0);
-                    }
-                    let rows = {};
-                    let tb = $('tbody');
-                    let idx = 0;
-                    let removeItems = [];
-                    tb.children('tr').each(function () {
-                        if (response.results.hasOwnProperty(name)) {
-                            let name = $(this).children('td:first').html();
-                            rows[name] = $(this);
-                            idx += 1;
-                        }
-                        else $(this).remove()
-                    });
-                    for (let item of removeItems) item.remove();
-                    let flag = false;
-                    for (let key in response.results) {
-                        let data = response.results[key];
-                        let r = getRow(data);
-                        total[0] += 1;
-                        for (let i = 1; i < 15; i++) {
-                            total[i] += r[i];
-                        }
-                        if (rows.hasOwnProperty(data.name)) {
-                            rows[data.name].children('td').each(function (i) {
-                                $(this).html(r[i])
-                            });
-                        } else {
-                            flag = true;
-                            let html = '<tr><td class="left aligned">' + r[0] + '</td>';
-                            for (let i = 1; i < 15; i++) {
-                                html += '<td>' + r[i] + '</td>'
-                            }
-                            tb.append(html + '</tr>')
-                        }
-                    }
-                    $('tfoot tr').children('th').each(function (i) {
-                        $(this).html(total[i] + (i ? '' : ' 项'))
-                    });
-                    if (flag) bindTds(idx)
-                } else message('更新失败', response.message);
-            } else message('更新失败', '无响应');
+                    tableData = response.results;
+                    fillTable()
+                } else message(response.message);
+            } else message('无响应');
             return response
         },
         onError: function (errorMessage) {
-            message('更新失败', errorMessage);
+            message(errorMessage);
         }
     })
 }
@@ -421,5 +517,5 @@ function initTable(flag) {
 $(document).ready(() => {
     initEvents();
     initData();
-    initTable(3)
+    initTable(0);
 });

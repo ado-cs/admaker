@@ -15,6 +15,13 @@ public enum ShowType {
         this.code = code;
         this.description = description;
     }
+    public static ShowType of(Integer code) {
+        if (code == null) return null;
+        for (ShowType type : values()) {
+            if (code == type.code) return type;
+        }
+        return null;
+    }
     public static ShowType of(String code) {
         if (code == null) return null;
         if ("PIC".equalsIgnoreCase(code)) return PICTURE;

@@ -10,10 +10,11 @@ import we.lcx.admaker.common.enums.DealMode;
  **/
 @Data
 public class ModifyAd {
-    private String flightName;
+    private String name;
     private Integer type;
     private Integer deal;
     private Integer fee;
+    private Integer dspId;
     private Boolean remove;
     private Integer amount;
 

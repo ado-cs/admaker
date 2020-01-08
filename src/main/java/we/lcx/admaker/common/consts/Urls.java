@@ -19,6 +19,9 @@ public interface Urls {
     String MAISUI_OPEN = "adform/update/serve";
     String MAISUI_PAUSE = "adform/update/pause";
     String MAISUI_DELETE = "adform/delete";
+    String MAISUI_PLAN = "adPlan/query/list";
+    String MAISUI_PLAN_PAUSE = "adPlan/update/pause";
+    String MAISUI_PLAN_DELETE = "adPlan/delete";
 
     String MAITIAN_RESOURCE = "resource/list";
     String MAITIAN_RESOURCE_NEW = "resource/create";
@@ -33,8 +36,6 @@ public interface Urls {
     String MAITIAN_TEMPLATE = "advertise/listTemplate";
     String MAITIAN_CREATE = "advertise/create";
     String MAITIAN_CREATIVE_QUERY = "advertise/itemCreatives";
-
-    String MAITIAN_PAGE = "schedule/page";
     String MAITIAN_DETAIL = "schedule/detail";
     String MAITIAN_ITEM_CLOSE = "schedule/item/trafficSwitch/update";
     String MAITIAN_AD_LIST = "advertise/list";
@@ -42,6 +43,7 @@ public interface Urls {
     String MAITIAN_RESERVATION_DELETE = "reserve/delete";
     String MAITIAN_ITEM_DELETE = "schedule/item/delete";
     String MAITIAN_AD_DELETE = "advertise/delete";
+    String MAISUI_DEAL_DELETE = "schedule/delete";
 
     String COMMON_APPROVE = "autoAudit/callback?inner=inner";
 

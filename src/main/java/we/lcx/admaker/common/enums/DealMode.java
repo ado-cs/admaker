@@ -16,9 +16,16 @@ public enum DealMode {
         this.value = value;
     }
 
-    public static DealMode of(int code) {
+    public static DealMode of(Integer code) {
+        if (code == null) return null;
         for (DealMode mode : values())
             if (mode.code == code) return mode;
+        return null;
+    }
+
+    public static DealMode of(String value) {
+        for (DealMode mode : values())
+            if (mode.value.equals(value)) return mode;
         return null;
     }
 

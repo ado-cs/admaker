@@ -15,7 +15,8 @@ public enum BiddingMode {
         this.value = value;
     }
 
-    public static BiddingMode of(int code) {
+    public static BiddingMode of(Integer code) {
+        if (code == null) return null;
         for (BiddingMode mode : values())
             if (mode.code == code) return mode;
         return null;

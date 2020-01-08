@@ -27,16 +27,9 @@ public class ContractCreate {
     @Value("${ad.common.dspId}")
     private Integer DSP_ID;
 
-    @Value("${ad.setting.suffix}")
-    private String SUFFIX;
-
     //以下字段需在麦田提前建立对应条目
     private static final long CUSTOMER_ID = 213290621L; //客户id
     private static final int MEDIA_ID = 5001; //资源媒体id
-    private static final int CONTRACT_ID = 152512; //合同id
-    private static final int IND1 = 3; //第一行业id
-    private static final int IND2 = 10; //第二行业id
-    private static final long BRAND = 2153992469L; //品牌id
     
     @Resource
     private BasicService basicService;
@@ -135,42 +128,13 @@ public class ContractCreate {
                 .getEntity().get("result");
     }
 
-    private Integer getDealId(String name) {
-        Pair<Integer, Integer> pair = new Pair<>();
-        HttpExecutor.doRequest(
-                Task.post(URL + Urls.MAITIAN_DEAL_LIST)
-                        .cookie(basicService.getCookie()).param(Entity.of(Params.COMMON_PAGE).put("scheduleName", name)))
-                .valid("获取排期失败").getEntity().cd("result/list").each(e -> {
-            if (String.valueOf(CONTRACT_ID).equals(String.valueOf(e.get("contractUid")))) {
-                pair.setKey((int) e.get("uid"));
-                return true;
-            }
-            return false;
-        });
-        return pair.getKey();
-    }
-
     public int createDeal(NewAds ads, ContractLog tag) {
-        String name = ads.getDealMode().name() + SUFFIX;
-        Integer id = getDealId(name);
+        Integer id = basicService.getDeals().get(ads.getDealMode());
         if (id != null) {
             tag.setDealId(id);
             return id;
         }
-        Date date = new Date();
-        return (int) HttpExecutor.doRequest(
-                Task.post(URL + Urls.MAITIAN_DEAL)
-                        .cookie(basicService.getCookie()).param(Entity.of(Params.MAITIAN_DEAL)
-                        .put("name", name)
-                        .put("scheduleTrafficType", ads.getDealMode().name())
-                        .put("beginTime", date.getTime())
-                        .put("contractUid", CONTRACT_ID)
-                        .put("firstIndustryUid", IND1)
-                        .put("secondIndustryUid", IND2)
-                        .put("brandUid", BRAND)
-                        .put("productName", CommonUtil.randomSuffix(6))))
-                .valid("创建排期失败")
-                .getEntity().get("result uid");
+        throw new VisibleException("获取排期id失败");
     }
 
     public int createDealItem(NewAds ads, ContractLog tag) {

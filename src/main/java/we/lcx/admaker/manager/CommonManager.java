@@ -2,6 +2,7 @@ package we.lcx.admaker.manager;
 
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import we.lcx.admaker.common.Result;
 import we.lcx.admaker.common.entities.*;
 import we.lcx.admaker.service.BasicService;
@@ -31,36 +32,50 @@ public class CommonManager {
         return CollectionUtils.isEmpty(results) ? Result.fail() : Result.ok(results);
     }
 
-    @SuppressWarnings("unchecked")
     public Result getAds(int refreshFlag) {//0: 不用刷新 1: 刷新麦田 2: 刷新麦穗 3: 全部刷新
         if ((refreshFlag & 1) == 1) contractModify.refreshAds();
         if (refreshFlag > 1) biddingModify.refreshAds();
-        Map<String, AdNumber> result = new HashMap<>();
-        Map map = contractModify.getAds();
-        fillNumbers(map, result, 1);
-        map = biddingModify.getAds();
-        fillNumbers(map, result, 2);
+        Map<String, Map<Integer, Map<Integer, Integer>>> result = new HashMap<>();
+        for (Object v : contractModify.getAds()) {
+            ContractAd ad = (ContractAd) v;
+            Map<Integer, Map<Integer, Integer>> map1 = result.computeIfAbsent(ad.getName(), t -> new HashMap<>());
+            Map<Integer, Integer> map2 = map1.computeIfAbsent(ad.index(), t -> new HashMap<>());
+            Map<Integer, Integer> map3 = map1.computeIfAbsent(ad.index() + 1, t -> new HashMap<>());
+            map2.put(ad.getDspId(), map2.getOrDefault(ad.getDspId(), 0) + 1);
+            map3.putIfAbsent(ad.getDspId(), 0);
+            if (ad.getStatus()) {
+                map3.put(ad.getDspId(), map3.get(ad.getDspId()) + 1);
+            }
+        }
+        for (Object v : biddingModify.getAds()) {
+            BiddingAd ad = (BiddingAd) v;
+            Map<Integer, Map<Integer, Integer>> map1 = result.computeIfAbsent(ad.getName(), t -> new HashMap<>());
+            Map<Integer, Integer> map2 = map1.computeIfAbsent(ad.index(), t -> new HashMap<>());
+            map2.put(0, map2.getOrDefault(0, 0) + 1);
+            if (ad.getStatus()) {
+                map2 = map1.computeIfAbsent(ad.index() + 1, t -> new HashMap<>());
+                map2.put(0, map2.getOrDefault(0, 0) + 1);
+            }
+        }
         return Result.ok(result);
     }
 
-    @SuppressWarnings("unchecked")
     public Result modify(ModifyAd modifyAd) {
         modifyAd.convert();
         Modify modify = modifyAd.getType() == 1 ? contractModify : biddingModify;
-        if (modifyAd.getAmount() < 0) return Result.fail("广告数量无效");
-        List ads = modify.getAds(modifyAd.getFlightName(), modifyAd.getDealMode(), modifyAd.getFee());
-        if (ads == null) return Result.fail("无广告位数据");
-        Set idsOn = new HashSet<>();
-        Set idsOff = new HashSet<>();
-        for (Object ad : ads) {
+        if (modifyAd.getAmount() < 0) modifyAd.setAmount(0);
+        Set<Integer> idsOn = new HashSet<>();
+        Set<Integer> idsOff = new HashSet<>();
+        for (Object ad : modify.getAds()) {
+            if (mismatching(modifyAd, ad)) continue;
             if (modifyAd.getType() == 1) {
                 ContractAd contractAd = (ContractAd) ad;
-                if (contractAd.getActive()) idsOn.add(new Pair<>(Integer.valueOf(contractAd.getDealItemId()), contractAd.getId()));
-                else idsOff.add(new Pair<>(Integer.valueOf(contractAd.getDealItemId()), contractAd.getId()));
+                if (contractAd.getStatus()) idsOn.add(contractAd.getDealItemId());
+                else idsOff.add(contractAd.getDealItemId());
             }
             else {
                 BiddingAd biddingAd = (BiddingAd) ad;
-                if (biddingAd.getActive()) idsOn.add(biddingAd.getId());
+                if (biddingAd.getStatus()) idsOn.add(biddingAd.getId());
                 else idsOff.add(biddingAd.getId());
             }
         }
@@ -90,7 +105,8 @@ public class CommonManager {
         else if (modifyAd.getAmount() > 0) {
             if (idsOn.size() == modifyAd.getAmount()) return Result.ok();
             int num = Math.abs(modifyAd.getAmount() - idsOn.size());
-            if (idsOn.size() < modifyAd.getAmount()) {
+            boolean flag = idsOn.size() < modifyAd.getAmount();
+            if (flag) {
                 Set<Integer> set = idsOn;
                 idsOn = idsOff;
                 idsOff = set;
@@ -100,7 +116,7 @@ public class CommonManager {
             for (int i = 0; i < num; i++) {
                 idsOff.add(idIter.next());
             }
-            modify.update(idsOff, idsOn.size() < modifyAd.getAmount());
+            modify.update(idsOff, flag);
         }
         else if (idsOn.size() > 0) {
             modify.update(idsOn, false);
@@ -108,18 +124,18 @@ public class CommonManager {
         return Result.ok();
     }
 
-    private void fillNumbers(Map<Integer, Map<String, List>> map, Map<String, AdNumber> result, int adType) {
-        if (!CollectionUtils.isEmpty(map)) {
-            for (Map.Entry<Integer, Map<String, List>> entry : map.entrySet()) {
-                if (CollectionUtils.isEmpty(entry.getValue())) continue;
-                for (Map.Entry<String, List> e : entry.getValue().entrySet()) {
-                    if (CollectionUtils.isEmpty(e.getValue())) continue;
-                    AdNumber adNumber = result.computeIfAbsent(e.getKey(), t -> new AdNumber(e.getKey()));
-                    for (Object ad : e.getValue()) {
-                        adNumber.increase(adType, entry.getKey(), adType == 1 ? ((ContractAd) ad).getActive() : ((BiddingAd) ad).getActive());
-                    }
-                }
-            }
+    private boolean mismatching(ModifyAd modifyAd, Object ad) {
+        if (modifyAd.getType() == 1) {
+            ContractAd contractAd = (ContractAd) ad;
+            return !StringUtils.isEmpty(modifyAd.getName()) && !modifyAd.getName().equals(contractAd.getName()) ||
+                    modifyAd.getDspId() != null && !modifyAd.getDspId().equals(contractAd.getDspId()) ||
+                    modifyAd.getDealMode() != null && modifyAd.getDealMode() != contractAd.getDealMode() ||
+                    modifyAd.getContractMode() != null && modifyAd.getContractMode() != contractAd.getContractMode();
+        }
+        else {
+            BiddingAd biddingAd = (BiddingAd) ad;
+            return !StringUtils.isEmpty(modifyAd.getName()) && !modifyAd.getName().equals(biddingAd.getName()) ||
+                    modifyAd.getBiddingMode() != null && modifyAd.getBiddingMode() != biddingAd.getBiddingMode();
         }
     }
 }

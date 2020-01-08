@@ -57,17 +57,6 @@ public class CommonUtil {
         return str.substring(0, 1).toLowerCase() + str.substring(1);
     }
 
-    public static String[] splitName(String str, String splitStr, int length, int ignoreTail) {
-        String[] s = str.split(splitStr);
-        if (s.length < length + ignoreTail) return s;
-        String[] ns = new String[length];
-        for (int i = length - 1, j = s.length - ignoreTail - 1; j >= 0; i--, j--) {
-            if (i < 0) ns[0] = s[j] + ns[0];
-            else ns[i] = s[j];
-        }
-        return ns;
-    }
-
     public static String parseDateString(String date) {
         return date + "T00:00:00.000Z";
     }
@@ -82,11 +71,6 @@ public class CommonUtil {
 
     public static String toDateString(Date date) {
         return FORMAT.format(date);
-    }
-
-    public static long timeOfToday() {
-        Calendar calendar = Calendar.getInstance();
-        return parseTime(calendar.get(Calendar.YEAR)  + "-" + (calendar.get(Calendar.MONTH) + 1) + "-" + calendar.get(Calendar.DATE));
     }
 
     public static long parseTime(String date) {

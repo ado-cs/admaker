@@ -1,27 +1,28 @@
 package we.lcx.admaker.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
+import org.springframework.util.CollectionUtils;
 import we.lcx.admaker.common.Entity;
 import we.lcx.admaker.common.Task;
+import we.lcx.admaker.common.TaskResult;
 import we.lcx.admaker.common.consts.Params;
-import we.lcx.admaker.common.consts.Settings;
 import we.lcx.admaker.common.consts.Urls;
 import we.lcx.admaker.common.entities.ContractAd;
 import we.lcx.admaker.common.entities.Pair;
-import we.lcx.admaker.common.enums.ContractMode;
 import we.lcx.admaker.common.enums.DealMode;
-import we.lcx.admaker.utils.CommonUtil;
+import we.lcx.admaker.common.json.DealItem;
 import we.lcx.admaker.utils.HttpExecutor;
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by LinChenxiao on 2020/01/03 16:20
  **/
+@Slf4j
 @Service
 public class ContractModify implements Modify {
 
@@ -31,13 +32,20 @@ public class ContractModify implements Modify {
     @Value("${ad.url.maitian}")
     private String URL;
 
-    private Map<Integer, Map<String, List<ContractAd>>> ads = new HashMap<>();
-    private ConcurrentHashMap<Integer, AtomicInteger> dealItemVersion = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Integer, Integer> dealItemMapReservationId = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Integer, AtomicInteger> adVersion = new ConcurrentHashMap<>();
+    @Value("${ad.common.dspId}")
+    private Integer DSP_ID;
+
+    private Map<Integer, ContractAd> ads = new HashMap<>();
 
     private volatile boolean processing;
 
+    @PostConstruct
+    private void init() {
+        refreshAds();
+        //clean();
+    }
+
+    @Override
     public void refreshAds() {
         if (processing) return;
         synchronized (this) {
@@ -45,180 +53,235 @@ public class ContractModify implements Modify {
             processing = true;
         }
         try {
-            long time = CommonUtil.timeOfToday();
-            Map<Integer, Map<String, List<ContractAd>>> allAds = new HashMap<>();
-            Set<Integer> items = new HashSet<>();
-            List<Integer> adIds = new ArrayList<>();
-            List<Integer> openAdIds = new ArrayList<>();
-            Set<Integer> dealIds = new HashSet<>();
-            HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_AD_LIST).cookie(basicService.getCookie()).param(Entity.of(Params.MAITIAN_AD_LIST)
-                    .cd("execPeriod")
-                    .put("startTime", time)
-                    .put("endTime", time + Settings.DAY - 1000)))
-                    .valid("获取今日麦田广告信息失败")
-                    .getEntity().cd("result/list").each(v -> {
-                String flag = String.valueOf(v.get("execStatus code"));
-                boolean open = "1001".equals(flag);
-                int id = (int) v.get("id");
-                adVersion.put(id, new AtomicInteger((int) v.get("version")));
-                String name = (String) v.get("name");
-                Integer dealId = Integer.valueOf(String.valueOf(v.get("scheduleInfo id")));
-                dealIds.add(dealId);
-                if (!StringUtils.isEmpty(name) && name.contains("_" + Settings.SPECIAL_NAME) && (open || "411".equals(flag))) {
+            Map<Integer, ContractAd> allAds = new HashMap<>();
+            for (Map.Entry<DealMode, Integer> entry : basicService.getDeals().entrySet()) {
+                for (DealItem item : getDealItemInfo(entry.getValue())) {
                     ContractAd contractAd = new ContractAd();
-                    contractAd.setId(id);
-                    contractAd.setActive(open);
-                    String[] s = CommonUtil.splitName(name, "_", 3, 2);
-                    contractAd.setName(s[0]);
-                    contractAd.setDealItemId(String.valueOf(v.get("scheduleItemId")));
-                    contractAd.setDealMode(DealMode.valueOf(s[1]));
-                    contractAd.setDealId(dealId);
-                    contractAd.setContractMode(ContractMode.valueOf(s[2]));
-                    Integer idx = getIndex(contractAd.getDealMode(), contractAd.getContractMode());
-                    allAds.computeIfAbsent(idx, t -> new HashMap<>()).computeIfAbsent(s[0], t -> new ArrayList<>()).add(contractAd);
+                    contractAd.setPositionId(item.getPositionId());
+                    contractAd.setDealItemId(item.getId());
+                    contractAd.setDspId(item.getDspId());
+                    contractAd.setDealId(entry.getValue());
+                    contractAd.setName(basicService.getFlightNameByPositionId(item.getPositionId()));
+                    contractAd.setStatus(item.getStatus());
+                    contractAd.setVersion(item.getVersion());
+                    contractAd.setReservationId(item.getReservationId());
+                    contractAd.setContractMode(item.getContractMode());
+                    contractAd.setDealMode(entry.getKey());
+                    allAds.put(item.getId(), contractAd);
                 }
-                else {
-                    Integer itemId = Integer.valueOf(String.valueOf(v.get("scheduleItemId")));
-                    items.add(itemId);
-                    adIds.add(id);
-                    if (open) openAdIds.add(id);
-                }
-            });
+            }
             ads = allAds;
-            for (Integer id : dealIds) fillDealItemInfo(id);
-            updateAds(openAdIds, false);
-            updateItems(items, false);
-            removeAds(adIds);
-            removeItems(items);
-            removeReservationsByDealItems(items);
         } finally {
             processing = false;
         }
     }
 
-    private Integer getIndex(DealMode deal, ContractMode fee) {
-        return DealMode.PDB == deal ? fee.getCode() : (DealMode.PD == deal ? 3 : 4);
-    }
-
-    private void fillDealItemInfo(Integer dealId) {
-        if (dealId == null) return;
-        HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_DETAIL).cookie(basicService.getCookie()).param(Entity.of()
-                .put("uid", String.valueOf(dealId))))
-                .valid("获取排期条目详情失败").getEntity()
-                .cd("result/items").each(v -> {
-            Integer id = (Integer) v.get("uid");
-            dealItemVersion.put(id, new AtomicInteger((int) v.get("version")));
-            dealItemMapReservationId.put(id, (Integer) v.get("reserveItemUid"));
-        });
-    }
-
-    public void updateItems(Collection<Integer> items, boolean flag) {
-        for (Integer id : items) {
-            updateItem(id, flag);
-        }
-    }
-
-    private void updateItem(Integer id, boolean flag) {
-        AtomicInteger version = dealItemVersion.computeIfAbsent(id, t -> new AtomicInteger());
-        if (HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_ITEM_CLOSE).cookie(basicService.getCookie()).param(Entity.of()
-                .put("uid", id).put("version", version.get()).put("trafficSwitch", flag ? "ON" : "CLOSE")))
-                .logError("开启/关闭排期条目流量失败，itemId = {}", id)) {
-            version.incrementAndGet();
-        }
-    }
-
-    public void updateAds(Collection<Integer> adIds, boolean flag) {
-        for (Integer id : adIds) {
-            updateAd(id, flag);
-        }
-    }
-
-    private void updateAd(Integer id, boolean flag) {
-        AtomicInteger version = adVersion.computeIfAbsent(id, t -> new AtomicInteger());
-        if (HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_AD_CLOSE).cookie(basicService.getCookie()).param(Entity.of()
-                .put("id", id).put("version", version.get()).put("status", flag ? "1001" : "411")))
-                .logError("开启/关闭麦田广告失败，adId = {}", id))
-            version.incrementAndGet();
-    }
-
+    @Async
     @Override
-    public void update(Collection pairs, boolean flag) {
-        for (Object pair : pairs) {
-            updateAd((Integer) ((Pair) pair).getValue(), flag);
-            updateItem((Integer) ((Pair) pair).getKey(), flag);
+    public void clean() {
+        Collection<Integer> deals = basicService.getDeals().values();
+        List<Integer> usedDealIds = new ArrayList<>();
+        List<Pair<Integer, Integer>> dealIds = new ArrayList<>();
+        int offset = 0;
+        int total;
+        do {
+            Entity entity = HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_DEAL_LIST)
+                    .cookie(basicService.getCookie()).param(Entity.of(Params.COMMON_PAGE).put("offset", offset).put("limit", 100)))
+                    .valid("获取排期失败").getEntity();
+            Integer count = (Integer) entity.get("result total");
+            if (count == null) {
+                log.error("获取麦田广告返回非法内容");
+                break;
+            }
+            else total = count;
+            offset += 100;
+            entity.cd("result/list").each(v -> {
+                Integer id = (Integer) v.get("uid");
+                if (deals.contains(id)) return;
+                Integer num = (Integer) v.get("scheduleItemNum");
+                if (num == null || num > 0) usedDealIds.add(id);
+                dealIds.add(new Pair<>(id, (Integer) v.get("version")));
+            });
         }
+        while (offset < total);
+        for (Integer id : usedDealIds) {
+            for (DealItem item : getDealItemInfo(id)) {
+                for (ContractAd ad : listAds(item.getId())){
+                    if (ad.getAdStatus() == null) continue;
+                    if (ad.getAdStatus()) {
+                        updateAd(ad.getAdId(), ad.getAdVersion(), false);
+                        ad.setAdVersion(ad.getAdVersion() + 1);
+                    }
+                    removeAd(ad.getAdId(), ad.getAdVersion());
+                }
+                if (item.getStatus()) {
+                    updateItem(item.getId(), item.getVersion(), false);
+                    item.setVersion(item.getVersion() + 1);
+                }
+                removeItem(item.getId(), item.getVersion());
+                removeReservation(item.getReservationId());
+            }
+        }
+        for (Pair<Integer, Integer> pair : dealIds) {
+            HttpExecutor.doRequest(Task.post(URL + Urls.MAISUI_DEAL_DELETE)
+                    .cookie(basicService.getCookie()).param(Entity.of().put("uid", pair.getKey()).put("version", pair.getValue())))
+                    .logError("删除排期失败，dealId = {}", pair.getKey());
+        }
+        log.info("麦田后台清理工作完成");
     }
 
-    public void removeReservations(Collection<Integer> ids) {
-        for (Integer id : ids) {
-            if (id == null) continue;
-            HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_RESERVATION_DELETE).cookie(basicService.getCookie()).param(Entity.of()
-                    .put("uid", id).put("version", 0)))
-                    .logError("删除资源预定失败，预定id = {}", id);
+    private List<DealItem> getDealItemInfo(Integer dealId) {
+        List<DealItem> list = new ArrayList<>();
+        if (dealId == null) return list;
+        TaskResult result = HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_DETAIL).cookie(basicService.getCookie()).param(Entity.of()
+                .put("uid", String.valueOf(dealId))));
+        if (result.isSuccess()) {
+            result.getEntity()
+                    .cd("result/items").each(v -> {
+                DealItem item = v.to(DealItem.class);
+                item.setStatus("ON".equals(v.get("trafficSwitch code")));
+                list.add(item);
+            });
         }
+        else result.logError("获取排期条目详情失败，dealId = {}", dealId);
+        return list;
     }
 
-    private void removeReservationsByDealItems(Collection<Integer> ids) {
-        for (Integer itemId : ids) {
-            removeReservationByDealItem(itemId);
-        }
+    private boolean updateItem(Integer id, Integer version, boolean flag) {
+        if (id == null) return false;
+        return HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_ITEM_CLOSE).cookie(basicService.getCookie()).param(Entity.of()
+                .put("uid", id).put("version", version).put("trafficSwitch", flag ? "ON" : "CLOSE")))
+                .logError("开启/关闭排期条目流量失败，itemId = {}", id);
     }
 
-    private void removeReservationByDealItem(Integer itemId) {
-        Integer id = dealItemMapReservationId.get(itemId);
+    private boolean updateAd(Integer id, Integer version, boolean flag) {
+        if (id == null) return false;
+        return HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_AD_CLOSE).cookie(basicService.getCookie()).param(Entity.of()
+                .put("id", id).put("version", version).put("status", flag ? "1001" : "411")))
+                .logError("开启/关闭麦田广告失败，adId = {}", id);
+    }
+
+    private boolean removeItem(Integer id, Integer version) {
+        if (id == null) return false;
+        return HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_ITEM_DELETE).cookie(basicService.getCookie()).param(Entity.of()
+                .put("uid", id).put("version", version))).isSuccess() ||
+                HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_ITEM_DELETE).cookie(basicService.getCookie()).param(Entity.of()
+                        .put("uid", id).put("version", version - 1)))
+                        .logError("删除排期条目失败，itemId = {}", id);
+    }
+
+    private boolean removeAd(Integer id, Integer version) {
+        if (id == null) return false;
+        return HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_AD_DELETE).cookie(basicService.getCookie()).param(Entity.of()
+                .put("uid", id).put("version", version)))
+                .isSuccess() ||
+                HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_AD_DELETE).cookie(basicService.getCookie()).param(Entity.of()
+                        .put("uid", id).put("version", version - 1)))
+                        .logError("删除麦田广告失败，adId = {}", id);
+    }
+
+    private void removeReservation(Integer id) {
+        if (id == null) return;
         HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_RESERVATION_DELETE).cookie(basicService.getCookie()).param(Entity.of()
                 .put("uid", id).put("version", 0)))
                 .logError("删除资源预定失败，预定id = {}", id);
     }
 
-    public void removeItems(Collection<Integer> items) {
-        for (Integer id : items) {
-            removeItem(id);
+    public void rollback(Collection<Integer> adIds, List<Pair<Integer, Integer>> items) {
+        if (!CollectionUtils.isEmpty(adIds)) {
+            for (Integer id : adIds) {
+                updateAd(id, 0, false);
+                removeAd(id, 1);
+            }
         }
-    }
-
-    private void removeItem(Integer id) {
-        int version = dealItemVersion.computeIfAbsent(id, t -> new AtomicInteger()).get();
-        if (HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_ITEM_DELETE).cookie(basicService.getCookie()).param(Entity.of()
-                .put("uid", id).put("version", version))).isSuccess())
-            dealItemVersion.remove(id);
-        else if (HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_ITEM_DELETE).cookie(basicService.getCookie()).param(Entity.of()
-                .put("uid", id).put("version", version - 1)))
-                .logError("删除排期条目失败，itemId = {}", id))
-            dealItemVersion.remove(id);
-    }
-
-    public void removeAds(Collection<Integer> adIds) {
-        for (Integer id : adIds) {
-            removeAd(id);
+        List<Integer> ids = new ArrayList<>();
+        List<Integer> dealItems = new ArrayList<>();
+        for (Pair<Integer, Integer> v : items) {
+            if (v.getKey() != null) ids.add(v.getKey());
+            if (v.getValue() != null) dealItems.add(v.getValue());
         }
-    }
-
-    private void removeAd(Integer id) {
-        AtomicInteger version = adVersion.computeIfAbsent(id, t -> new AtomicInteger());
-        if (HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_AD_DELETE).cookie(basicService.getCookie()).param(Entity.of()
-                .put("uid", id).put("version", version.get())))
-                .logError("删除麦田广告失败，adId = {}", id))
-            adVersion.remove(id);
+        if (CollectionUtils.isEmpty(dealItems)) return;
+        for (Integer id : dealItems) {
+            updateItem(id, 0, false);
+            removeItem(id, 1);
+        }
+        for (Integer id : ids) removeReservation(id);
     }
 
     @Override
-    public void remove(Collection pairs) {
-        for (Object pair : pairs) {
-            removeAd((Integer) ((Pair) pair).getValue());
-            removeItem((Integer) ((Pair) pair).getKey());
-            removeReservationByDealItem((Integer) ((Pair) pair).getKey());
+    public void update(Collection<Integer> list, boolean flag) {
+        for (Integer id : list) {
+            ContractAd contractAd = fillAd(ads.get(id));
+            if (contractAd == null) continue;
+            Integer version = contractAd.getAdVersion();
+            if (version != null && flag != contractAd.getAdStatus() && updateAd(contractAd.getAdId(), version, flag)) {
+                contractAd.setAdStatus(flag);
+                contractAd.setAdVersion(version + 1);
+            }
+            version = contractAd.getVersion();
+            if (flag != contractAd.getStatus() && updateItem(contractAd.getDealItemId(), version, flag)) {
+                contractAd.setStatus(flag);
+                contractAd.setVersion(version + 1);
+            }
         }
     }
 
     @Override
-    public Map<Integer, Map<String, List<ContractAd>>> getAds() {
-        return ads;
+    public void remove(Collection<Integer> list) {
+        for (Integer id : list) {
+            ContractAd contractAd = fillAd(ads.get(id));
+            if (contractAd == null) continue;
+            Integer version = contractAd.getAdVersion();
+            if (contractAd.getAdId() != null && !removeAd(contractAd.getAdId(), version)) continue;
+            version = contractAd.getVersion();
+            if (!removeItem(contractAd.getDealItemId(), version)) continue;
+            removeReservation(contractAd.getReservationId());
+            ads.remove(id);
+        }
+    }
+
+    private ContractAd fillAd(ContractAd ad) {
+        if (ad == null) return null;
+        if (ad.getAdId() != null) return ad;
+        Integer id = ad.getDealItemId();
+        TaskResult result = HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_AD_LIST).cookie(basicService.getCookie()).param(Entity.of(Params.MAITIAN_AD_LIST)
+                .put("scheduleItemId", id)));
+        if (result.isSuccess()) {
+            Entity entity = result.getEntity();
+            int total = (int) entity.get("result total");
+            if (total == 0) log.error("排期条目下无广告，itemId = {}", id);
+            else {
+                if (total > 1) log.error("排期条目下广告数量大于1，itemId = {}", id);
+                entity.cd("result/list[0]");
+                ad.setAdId((Integer) entity.get("id"));
+                ad.setAdVersion((Integer) entity.get("version"));
+                ad.setAdStatus("1001".equals(entity.get("activeStatus code")));
+            }
+        }
+        else result.logError("获取排期条目下广告列表失败，itemId = {}", id);
+        return ad;
+    }
+
+    private List<ContractAd> listAds(Integer dealItem) {
+        List<ContractAd> list = new ArrayList<>();
+        if (dealItem == null) return list;
+        TaskResult result = HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_AD_LIST).cookie(basicService.getCookie()).param(Entity.of(Params.MAITIAN_AD_LIST)
+                .put("scheduleItemId", dealItem)));
+        if (result.isSuccess()) {
+            result.getEntity().cd("result/list").each(t -> {
+                ContractAd ad = new ContractAd();
+                ad.setAdId((Integer) t.get("id"));
+                ad.setAdVersion((Integer) t.get("version"));
+                ad.setAdStatus("1001".equals(t.get("activeStatus code")));
+                list.add(ad);
+            });
+        }
+        else result.logError("获取排期条目下广告列表失败，itemId = {}", dealItem);
+        return list;
     }
 
     @Override
-    public List<ContractAd> getAds(String flightName, DealMode deal, Integer fee) {
-        Map<String, List<ContractAd>> map = ads.get(getIndex(deal, ContractMode.of(fee)));
-        return map == null ? null : map.get(flightName);
+    public Collection<ContractAd> getAds() {
+        return ads.values();
     }
 }

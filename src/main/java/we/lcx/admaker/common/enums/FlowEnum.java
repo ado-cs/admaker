@@ -23,7 +23,8 @@ public enum FlowEnum {
         this.value = value;
     }
 
-    public static FlowEnum of(int code) {
+    public static FlowEnum of(Integer code) {
+        if (code == null) return null;
         for (FlowEnum mode : values())
             if (mode.code == code) return mode;
         return null;

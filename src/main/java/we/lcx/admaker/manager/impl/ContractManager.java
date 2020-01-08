@@ -61,7 +61,7 @@ public class ContractManager implements AdManager {
                 pair.setValue(tag.getDealItemId());
             }
             catch (Exception e) {
-                rollback(created, null);
+                contractModify.rollback(null, created);
                 throw e;
             }
             if (!DSP_ID.equals(ads.getDspId())) continue;
@@ -79,24 +79,7 @@ public class ContractManager implements AdManager {
         if (!DSP_ID.equals(ads.getDspId())) return Result.ok();
         List<Integer> adIds = basicService.executeAndApprove(tasks, 1);
         if (adIds == null) return Result.ok();
-        rollback(created, adIds);
+        contractModify.rollback(adIds, created);
         return Result.fail("创建广告失败！");
-    }
-
-    private void rollback(List<Pair<Integer, Integer>> created, List<Integer> adIds) {
-        if (!CollectionUtils.isEmpty(adIds)) {
-            contractModify.updateAds(adIds, false);
-            contractModify.removeAds(adIds);
-        }
-        List<Integer> ids = new ArrayList<>();
-        List<Integer> dealItems = new ArrayList<>();
-        for (Pair<Integer, Integer> v : created) {
-            if (v.getKey() != null) ids.add(v.getKey());
-            if (v.getValue() != null) dealItems.add(v.getValue());
-        }
-        if (CollectionUtils.isEmpty(dealItems)) return;
-        contractModify.updateItems(dealItems, false);
-        contractModify.removeItems(dealItems);
-        contractModify.removeReservations(ids);
     }
 }

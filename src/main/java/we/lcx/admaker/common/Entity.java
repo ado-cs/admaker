@@ -233,8 +233,18 @@ public class Entity {
             return list.size() == 0 ? null : to(list.get(0), clazz);
         }
         try {
-            if (clazz.isEnum())
-                return (T) clazz.getMethod("of", String.class).invoke(null, String.valueOf(res));
+            if (clazz.isEnum()) {
+                if (res instanceof Integer)
+                    return (T) clazz.getMethod("of", Integer.class).invoke(null, res);
+                else {
+                    try {
+                        return (T) clazz.getMethod("of", String.class).invoke(null, String.valueOf(res));
+                    }
+                    catch (NoSuchMethodException e) {
+                        return (T) clazz.getMethod("valueOf", String.class).invoke(null, String.valueOf(res));
+                    }
+                }
+            }
             if (!(res instanceof Map)) {
                 String s = String.valueOf(res);
                 if (clazz == String.class) return (T) s;

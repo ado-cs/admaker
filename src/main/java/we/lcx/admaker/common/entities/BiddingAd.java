@@ -14,6 +14,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class BiddingAd {
     private Integer id;
     private String name;
-    private Boolean active;
+    private Integer positionId;
+    private Boolean status;
+    private Integer version;
     private BiddingMode biddingMode;
+
+    public Integer index() {
+        return biddingMode == BiddingMode.CPC ? 10 : 12;
+    }
 }
