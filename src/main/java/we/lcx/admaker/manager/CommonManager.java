@@ -61,6 +61,7 @@ public class CommonManager {
     }
 
     public Result modify(ModifyAd modifyAd) {
+        boolean success = true;
         modifyAd.convert();
         Modify modify = modifyAd.getType() == 1 ? contractModify : biddingModify;
         if (modifyAd.getAmount() < 0) modifyAd.setAmount(0);
@@ -90,7 +91,7 @@ public class CommonManager {
                     idIter.next();
                     idIter.remove();
                 }
-                modify.update(idsOn, false);
+                success = modify.update(idsOn, false);
                 idsOff.addAll(idsOn);
             }
             else if (idsOff.size() > num) {
@@ -100,7 +101,7 @@ public class CommonManager {
                     idIter.remove();
                 }
             }
-            modify.remove(idsOff);
+            success = success && modify.remove(idsOff);
         }
         else if (modifyAd.getAmount() > 0) {
             if (idsOn.size() == modifyAd.getAmount()) return Result.ok();
@@ -116,12 +117,12 @@ public class CommonManager {
             for (int i = 0; i < num; i++) {
                 idsOff.add(idIter.next());
             }
-            modify.update(idsOff, flag);
+            success = modify.update(idsOff, flag);
         }
         else if (idsOn.size() > 0) {
-            modify.update(idsOn, false);
+            success = modify.update(idsOn, false);
         }
-        return Result.ok();
+        return success ? Result.ok() : Result.fail("存在失败操作，请检查日志！");
     }
 
     private boolean mismatching(ModifyAd modifyAd, Object ad) {

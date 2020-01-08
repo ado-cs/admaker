@@ -77,7 +77,7 @@ public class BiddingModify implements Modify {
                     biddingAd.setPositionId((Integer) v.get("campaignPackageId"));
                     biddingAd.setName(basicService.getFlightNameByPositionId(biddingAd.getPositionId()));
                     biddingAd.setBiddingMode(BiddingMode.valueOf((String) v.get("billingMode value")));
-                    biddingAd.setStatus("1001".equals(String.valueOf(v.get("compositeStatus code"))));
+                    biddingAd.setStatus("1001".equals(String.valueOf(v.get("configuredStatus code"))));
                     allAds.put(biddingAd.getId(), biddingAd);
                 });
                 offset += 1;
@@ -142,40 +142,42 @@ public class BiddingModify implements Modify {
     }
 
     @Override
-    public void update(Collection<Integer> adIds, boolean flag) {
-        if (CollectionUtils.isEmpty(adIds)) return;
+    public boolean update(Collection<Integer> adIds, boolean flag) {
+        if (CollectionUtils.isEmpty(adIds)) return true;
         Set<BiddingAd> set = new HashSet<>();
         for (Integer id : adIds) {
             BiddingAd biddingAd = ads.get(id);
             if (biddingAd != null && biddingAd.getStatus() != flag) set.add(biddingAd);
         }
-        Entity entity = composeEntity(set);
-        if (entity != null && !HttpExecutor.doRequest(Task.post(URL + (flag ? Urls.MAISUI_OPEN : Urls.MAISUI_PAUSE))
-                .param(entity))
+        if (HttpExecutor.doRequest(Task.post(URL + (flag ? Urls.MAISUI_OPEN : Urls.MAISUI_PAUSE))
+                .param(composeEntity(set)))
                 .logError("开启/关闭麦穗广告失败")) {
             for (BiddingAd ad : set) {
                 ad.setStatus(flag);
                 ad.setVersion(ad.getVersion() + 1);
             }
+            return true;
         }
+        return false;
     }
 
     @Override
-    public void remove(Collection<Integer> adIds) {
-        if (CollectionUtils.isEmpty(adIds)) return;
+    public boolean remove(Collection<Integer> adIds) {
+        if (CollectionUtils.isEmpty(adIds)) return true;
         Set<BiddingAd> set = new HashSet<>();
         for (Integer id : adIds) {
             BiddingAd biddingAd = ads.get(id);
             if (biddingAd != null) set.add(biddingAd);
         }
-        Entity entity = composeEntity(set);
         if (HttpExecutor.doRequest(Task.post(URL + Urls.MAISUI_DELETE)
-                .param(entity))
+                .param(composeEntity(set)))
                 .logError("删除麦穗广告失败")) {
             for (BiddingAd ad : set) {
                 ads.remove(ad.getId());
             }
+            return true;
         }
+        return false;
     }
 
     private Entity composeEntity(Collection<BiddingAd> list) {

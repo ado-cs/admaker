@@ -180,9 +180,9 @@ public class ContractModify implements Modify {
                         .logError("删除麦田广告失败，adId = {}", id);
     }
 
-    private void removeReservation(Integer id) {
-        if (id == null) return;
-        HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_RESERVATION_DELETE).cookie(basicService.getCookie()).param(Entity.of()
+    private boolean removeReservation(Integer id) {
+        if (id == null) return false;
+        return HttpExecutor.doRequest(Task.post(URL + Urls.MAITIAN_RESERVATION_DELETE).cookie(basicService.getCookie()).param(Entity.of()
                 .put("uid", id).put("version", 0)))
                 .logError("删除资源预定失败，预定id = {}", id);
     }
@@ -209,35 +209,45 @@ public class ContractModify implements Modify {
     }
 
     @Override
-    public void update(Collection<Integer> list, boolean flag) {
+    public boolean update(Collection<Integer> list, boolean flag) {
+        boolean success = true;
         for (Integer id : list) {
             ContractAd contractAd = fillAd(ads.get(id));
             if (contractAd == null) continue;
             Integer version = contractAd.getAdVersion();
-            if (version != null && flag != contractAd.getAdStatus() && updateAd(contractAd.getAdId(), version, flag)) {
-                contractAd.setAdStatus(flag);
-                contractAd.setAdVersion(version + 1);
+            if (version != null && flag != contractAd.getAdStatus()) {
+                if (updateAd(contractAd.getAdId(), version, flag)) {
+                    contractAd.setAdStatus(flag);
+                    contractAd.setAdVersion(version + 1);
+                }
+                else success = false;
             }
             version = contractAd.getVersion();
-            if (flag != contractAd.getStatus() && updateItem(contractAd.getDealItemId(), version, flag)) {
-                contractAd.setStatus(flag);
-                contractAd.setVersion(version + 1);
+            if (flag != contractAd.getStatus()) {
+                if (updateItem(contractAd.getDealItemId(), version, flag)) {
+                    contractAd.setStatus(flag);
+                    contractAd.setVersion(version + 1);
+                }
+                else success = false;
             }
         }
+        return success;
     }
 
     @Override
-    public void remove(Collection<Integer> list) {
+    public boolean remove(Collection<Integer> list) {
+        boolean success = true;
         for (Integer id : list) {
             ContractAd contractAd = fillAd(ads.get(id));
             if (contractAd == null) continue;
             Integer version = contractAd.getAdVersion();
-            if (contractAd.getAdId() != null && !removeAd(contractAd.getAdId(), version)) continue;
+            if (contractAd.getAdId() != null && !removeAd(contractAd.getAdId(), version)) { success = false; continue;}
             version = contractAd.getVersion();
-            if (!removeItem(contractAd.getDealItemId(), version)) continue;
-            removeReservation(contractAd.getReservationId());
+            if (!removeItem(contractAd.getDealItemId(), version)) { success = false; continue;}
+            if (!removeReservation(contractAd.getReservationId())) { success = false; continue;}
             ads.remove(id);
         }
+        return success;
     }
 
     private ContractAd fillAd(ContractAd ad) {

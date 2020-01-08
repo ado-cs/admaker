@@ -410,7 +410,10 @@ function doModify(data) {
         },
         onResponse: function (response) {
             if (response) {
-                if (response.success) initTable(data.type);
+                if (response.success) {
+                    message('操作成功！', true);
+                    initTable(data.type);
+                }
                 else message(response.message);
             } else message('无响应');
             return response;
