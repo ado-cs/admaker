@@ -99,8 +99,8 @@ public class ContractModify implements Modify {
                 Integer id = (Integer) v.get("uid");
                 if (deals.contains(id)) return;
                 Integer num = (Integer) v.get("scheduleItemNum");
-                if (num == null || num > 0) usedDealIds.add(id);
-                dealIds.add(new Pair<>(id, (Integer) v.get("version")));
+                //if (num == null || num > 0) usedDealIds.add(id);
+                if (num != null && num == 0) dealIds.add(new Pair<>(id, (Integer) v.get("version")));
             });
         }
         while (offset < total);

@@ -433,7 +433,7 @@ function quzModify(content, data) {
 function numModify(title, data) {
     msgBox(title, '<div class="ui fluid input"><input type="number" value="' + data.amount + '"></div>', function () {
         let val = parseInt($('.modal input').val());
-        if (data.amount > val) {
+        if (data.amount !== val) {
             data.amount = val;
             doModify(data);
         }
